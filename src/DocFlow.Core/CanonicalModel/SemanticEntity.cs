@@ -191,34 +191,34 @@ public sealed class SemanticParameter
 /// <summary>
 /// Represents a type reference in the semantic model
 /// </summary>
-public sealed class SemanticType
+public sealed record SemanticType
 {
-    public required string Name { get; set; }
-    
+    public required string Name { get; init; }
+
     /// <summary>
     /// Is this a primitive/built-in type?
     /// </summary>
-    public bool IsPrimitive { get; set; }
-    
+    public bool IsPrimitive { get; init; }
+
     /// <summary>
     /// Is this a collection type?
     /// </summary>
-    public bool IsCollection { get; set; }
-    
+    public bool IsCollection { get; init; }
+
     /// <summary>
     /// Is this nullable?
     /// </summary>
-    public bool IsNullable { get; set; }
-    
+    public bool IsNullable { get; init; }
+
     /// <summary>
     /// Generic type arguments if applicable
     /// </summary>
     public List<SemanticType> GenericArguments { get; init; } = [];
-    
+
     /// <summary>
     /// Reference to the entity definition if this type refers to another entity
     /// </summary>
-    public string? ReferencedEntityId { get; set; }
+    public string? ReferencedEntityId { get; init; }
     
     // Common primitive type helpers
     public static SemanticType String => new() { Name = "string", IsPrimitive = true };
