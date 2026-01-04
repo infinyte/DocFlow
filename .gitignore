@@ -1,0 +1,86 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+
+# NCrunch
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+# Code coverage
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# DocFlow specific
+.docflow/
+*.db
+!samples/**/*.db
+
+# ML Models (large files - use Git LFS)
+models/*.onnx
+models/*.pt
+models/*.bin
+!models/.gitkeep
+
+# Secrets and config
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json.example
+*.pfx
+*.key
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.temp
+*~
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/

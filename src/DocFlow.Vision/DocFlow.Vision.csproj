@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DocFlow.Vision</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Description>Computer vision and whiteboard recognition for DocFlow</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DocFlow.Core\DocFlow.Core.csproj" />
+    <ProjectReference Include="..\DocFlow.AI\DocFlow.AI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OpenCV for image preprocessing -->
+    <PackageReference Include="OpenCvSharp4" Version="4.9.0.20240103" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.9.0.20240103" Condition="'$(RuntimeIdentifier)' == 'win-x64'" />
+    <PackageReference Include="OpenCvSharp4.runtime.linux-x64" Version="4.9.0.20240103" Condition="'$(RuntimeIdentifier)' == 'linux-x64'" />
+    
+    <!-- ONNX Runtime for local ML models -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.16.3" />
+    
+    <!-- Tesseract for OCR (fallback) -->
+    <PackageReference Include="Tesseract" Version="5.2.0" />
+    
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

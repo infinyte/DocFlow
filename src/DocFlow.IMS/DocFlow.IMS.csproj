@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DocFlow.IMS</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Description>Intelligent Mapping Service - learns and applies transformation patterns</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DocFlow.Core\DocFlow.Core.csproj" />
+    <ProjectReference Include="..\DocFlow.AI\DocFlow.AI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.ML" Version="3.0.0" />
+    <PackageReference Include="LiteDB" Version="5.0.17" /> <!-- For local pattern storage -->
+  </ItemGroup>
+
+</Project>
