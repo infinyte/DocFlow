@@ -1,0 +1,82 @@
+classDiagram
+    class Patient {
+        +name
+        +dateOfBirth
+        +bloodType
+        +allergies
+    }
+    
+    class Schedule {
+        +diagnoses
+        +duriebse
+    }
+    
+    class BSchedule {
+        +diagnoseL
+        +preserbbe
+    }
+    
+    class AppointmentId {
+        +date
+        +specialty
+        +licenseNumber
+    }
+    
+    class Ditopper {
+        +neabor
+        +specialty
+        +preserrber
+    }
+    
+    class Nourise {
+        +durpooe
+        +pepartbent
+    }
+    
+    class Appointment {
+        +recordId
+        +racordId
+        +diagnosis
+        +treatment
+        +pressicratuss
+    }
+    
+    class Departmecord {
+        +deptId
+        +staff
+        +name
+        +prepertabess
+    }
+    
+    class Insurance {
+        +hospitalNabel
+        +provides
+        +salary
+    }
+    
+    class Hospital {
+        +poclayeemiee
+        +hiredate
+        +salay
+    }
+    
+    class InsurancePolicy {
+        +policyNumber
+        +name
+        +coverage
+    }
+    
+    Patient --> Schedule
+    Schedule --> BSchedule
+    Patient --> AppointmentId
+    AppointmentId --> Ditopper
+    Ditopper --> Nourise
+    AppointmentId --> Appointment
+    Appointment --> Departmecord
+    Departmecord --> Insurance
+    Appointment --> Hospital
+    Departmecord --> InsurancePolicy
+    Schedule --> Ditopper
+    BSchedule --> Nourise
+    Ditopper --> Departmecord
+    Nourise --> Insurance
