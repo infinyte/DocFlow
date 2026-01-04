@@ -8,7 +8,9 @@
     <RootNamespace>DocFlow.CLI</RootNamespace>
     <LangVersion>latest</LangVersion>
     <AssemblyName>docflow</AssemblyName>
+    <PackageId>DocFlow.CLI</PackageId>
     <PackAsTool>true</PackAsTool>
+    <IsPackable>true</IsPackable>
     <ToolCommandName>docflow</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <Description>DocFlow CLI - Intelligent documentation and modeling toolkit</Description>
@@ -25,6 +27,7 @@
     <ProjectReference Include="..\DocFlow.IMS\DocFlow.IMS.csproj" />
     <ProjectReference Include="..\DocFlow.Ontology\DocFlow.Ontology.csproj" />
     <ProjectReference Include="..\DocFlow.AI\DocFlow.AI.csproj" />
+    <ProjectReference Include="..\DocFlow.Integration\DocFlow.Integration.csproj" />
   </ItemGroup>
 
   <ItemGroup>

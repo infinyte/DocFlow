@@ -1,0 +1,17 @@
+classDiagram
+    class Vehicle {
+        +make : String
+        +model : String
+        +year : int
+    }
+    
+    class Car {
+        +numDoors : int
+    }
+    
+    class Motorcicle {
+        +hasSidecar : boolean
+    }
+    
+    Vehicle <|-- Car
+    Vehicle <|-- Motorcicle

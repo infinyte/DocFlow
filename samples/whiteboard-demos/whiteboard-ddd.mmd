@@ -1,0 +1,34 @@
+classDiagram
+    class Order {
+        <<aggregate root>>
+        -ID
+        -Status
+        -orderDate
+    }
+    
+    class Product {
+        -Qrulart
+    }
+    
+    class LineItem {
+        -Quantity
+        -Price
+    }
+    
+    class ShippingAddress {
+        -Street
+        -City
+        -ZipCode
+        -Cits
+        -mm
+    }
+    
+    class Customer {
+        -CidSi
+        -nome
+    }
+    
+    Order *-- Product
+    Order *-- LineItem
+    Order *-- ShippingAddress
+    Order --> Customer : references

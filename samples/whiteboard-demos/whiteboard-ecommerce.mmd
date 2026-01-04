@@ -1,0 +1,65 @@
+classDiagram
+    class User {
+        +id
+        +email
+        +passwordHash
+    }
+    
+    class Amail {
+        +passwordHash
+    }
+    
+    class Orderitem {
+        +status
+        +craad
+    }
+    
+    class Status {
+        +craad
+    }
+    
+    class UnitPrice {
+        +sku
+    }
+    
+    class Product {
+        +name
+        +name
+    }
+    
+    class Name {
+        +name
+    }
+    
+    class Sku {
+        +scku
+    }
+    
+    class Category {
+        +amount
+        +transactionId
+    }
+    
+    class Amount {
+        +transactionId
+    }
+    
+    class Method {
+        +transactionId
+    }
+    
+    User --> Amail
+    User --> Orderitem
+    Amail --> UnitPrice
+    Orderitem --> Status
+    Status --> UnitPrice
+    Orderitem --> Product
+    Status --> Name
+    UnitPrice --> Sku
+    Product --> Name
+    Name --> Sku
+    Product --> Category
+    Name --> Amount
+    Sku --> Method
+    Category --> Amount
+    Amount --> Method
