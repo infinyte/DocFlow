@@ -5,7 +5,30 @@
       "Bash(wget:*)",
       "Bash(chmod:*)",
       "Bash(/tmp/dotnet-install.sh:*)",
-      "Bash(export PATH=\"$HOME/.dotnet:$PATH\")"
+      "Bash(export PATH=\"$HOME/.dotnet:$PATH\")",
+      "Bash(dotnet run:*)",
+      "WebFetch(domain:mermaid.js.org)",
+      "Bash(dotnet test:*)",
+      "Bash(echo:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet sln:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(unset ANTHROPIC_API_KEY)",
+      "Bash(export PATH=\"$HOME/.dotnet:$PATH:/usr/bin\")",
+      "Bash($HOME/.dotnet/dotnet restore DocFlow.sln --packages /tmp/nuget_packages)",
+      "Bash($HOME/.dotnet/dotnet build:*)",
+      "Bash(/root/.dotnet/dotnet restore:*)",
+      "Bash(/root/.dotnet/dotnet build:*)",
+      "Bash(/root/.dotnet/dotnet pack:*)",
+      "Bash(/root/.dotnet/dotnet nuget verify:*)",
+      "Bash(/root/.dotnet/dotnet tool install:*)",
+      "Bash(/root/.dotnet/dotnet tool update:*)",
+      "Bash(export PATH=\"$PATH:/root/.dotnet/tools\")",
+      "Bash(docflow --version:*)",
+      "Bash(unzip:*)",
+      "Bash(/root/.dotnet/dotnet run --project src/DocFlow.CLI/DocFlow.CLI.csproj -- codegen test-input.mmd -o test-output.cs -n TestNamespace)",
+      "Bash(/root/.dotnet/dotnet run:*)",
+      "Bash(/root/.dotnet/dotnet test:*)"
     ]
   }
 }

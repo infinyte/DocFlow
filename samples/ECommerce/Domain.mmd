@@ -1,0 +1,78 @@
+classDiagram
+    class Customer {
+        <<Entity>>
+        +Id : Guid
+        +Name : string
+        +Email : string
+        +ShippingAddress : Address
+        +CreatedAt : DateTime
+    }
+    class Address {
+        <<ValueObject>>
+        +Street : string
+        +City : string
+        +State : string
+        +PostalCode : string
+        +Country : string
+    }
+    class Order {
+        <<AggregateRoot>>
+        +Id : Guid
+        +CustomerId : Guid
+        +Status : OrderStatus
+        +LineItems : ICollection~LineItem~
+        +Total : Money
+        +CreatedAt : DateTime
+        +ShippedAt : DateTime?
+        +AddLineItem(product, quantity) void
+        +CalculateTotal() Money
+        +Ship() void
+    }
+    class LineItem {
+        <<Entity>>
+        +Id : Guid
+        +ProductId : Guid
+        +ProductName : string
+        +UnitPrice : Money
+        +Quantity : int
+    }
+    class Money {
+        <<ValueObject>>
+        +Amount : decimal
+        +Currency : string
+        +Zero(currency) Money$
+    }
+    class Product {
+        <<Entity>>
+        +Id : Guid
+        +Name : string
+        +Description : string
+        +Price : Money
+        +Sku : string
+        +StockQuantity : int
+    }
+    class OrderPlacedEvent {
+        <<ValueObject>>
+        +OrderId : Guid
+        +CustomerId : Guid
+        +TotalAmount : decimal
+        +OccurredAt : DateTime
+    }
+    class IOrderRepository {
+        <<interface>>
+    }
+    class OrderStatus {
+        <<enumeration>>
+        +Draft : OrderStatus
+        +Confirmed : OrderStatus
+        +Shipped : OrderStatus
+        +Delivered : OrderStatus
+        +Cancelled : OrderStatus
+    }
+
+    Customer --> Address : ShippingAddress
+    Order --> OrderStatus : Status
+    Order --* "*" LineItem : LineItems
+    Order --> Money : Total
+    LineItem --> Money : UnitPrice
+    Product --> Money : Price
