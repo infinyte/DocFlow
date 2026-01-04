@@ -32,17 +32,17 @@ Transform code into diagrams, diagrams into code, and whiteboard sketches into w
 
 **Linux/macOS/WSL:**
 ```bash
-curl -sSL https://raw.githubusercontent.com/kurtmitchell/docflow/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/infinyte/docflow/main/install.sh | bash
 ```
 
 **Windows PowerShell:**
 ```powershell
-irm https://raw.githubusercontent.com/kurtmitchell/docflow/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/infinyte/docflow/main/install.ps1 | iex
 ```
 
 **From Source:**
 ```bash
-git clone https://github.com/kurtmitchell/docflow.git
+git clone https://github.com/infinyte/docflow.git
 cd docflow
 dotnet build
 dotnet run --project src/DocFlow.CLI -- --help
