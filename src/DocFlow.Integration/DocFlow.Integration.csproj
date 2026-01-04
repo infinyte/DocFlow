@@ -4,20 +4,23 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>DocFlow.AI</RootNamespace>
+    <RootNamespace>DocFlow.Integration</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <Description>AI service integrations for DocFlow - Claude, OpenAI, local models</Description>
+    <Description>Enterprise API integration automation - schema parsing, CDM mapping, code generation</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DocFlow.Core\DocFlow.Core.csproj" />
+    <ProjectReference Include="..\DocFlow.IMS\DocFlow.IMS.csproj" />
+    <ProjectReference Include="..\DocFlow.CodeGen\DocFlow.CodeGen.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.13" />
+    <PackageReference Include="NJsonSchema" Version="11.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

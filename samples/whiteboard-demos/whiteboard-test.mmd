@@ -1,0 +1,18 @@
+classDiagram
+    class Customer {
+        +name : String
+        +email : String
+    }
+    
+    class Order {
+        +total : Number
+    }
+    
+    class Product {
+        +name : String
+        +price : Number
+    }
+    
+    Customer --> Order
+    Customer --> Product
+    Order --> Product

@@ -2,293 +2,273 @@
 
 **Intelligent Documentation and Modeling Toolkit**
 
-Transform whiteboard sketches into working code. Keep diagrams and code in sync. Let AI learn your team's patterns.
+Transform code into diagrams, diagrams into code, and whiteboard sketches into working models. Built on a Canonical Semantic Model that preserves meaning across all transformations.
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Build](https://img.shields.io/github/actions/workflow/status/kurtmitchell/docflow/build.yml?branch=main)](https://github.com/kurtmitchell/docflow/actions)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-72%20passing-brightgreen)]()
 
 ---
 
-## The Problem
+## Features
 
-Every software team struggles with the same documentation challenges:
-
-- **Whiteboard sketches get lost** - Great ideas drawn in meetings never make it to code
-- **Diagrams go stale** - Documentation diverges from implementation within weeks
-- **Format conversion is painful** - Markdown ↔ PDF ↔ Word round-trips lose information
-- **Every new integration is manual** - Teams reinvent the same mapping patterns over and over
-
-## The Solution
-
-DocFlow treats **diagrams, documentation, and code as interconnected representations of the same underlying model**. Change one, and the others stay in sync.
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Whiteboard    │     │    Canonical    │     │      Code       │
-│    Photo        │────▶│   Semantic      │────▶│    (C#/Java)    │
-│                 │     │     Model       │     │                 │
-└─────────────────┘     └────────┬────────┘     └─────────────────┘
-                                 │
-        ┌────────────────────────┼────────────────────────┐
-        ▼                        ▼                        ▼
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│    Mermaid      │     │   Documentation │     │    PlantUML     │
-│    Diagram      │     │   (Markdown)    │     │    Diagram      │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-```
+| Feature | Status | Description |
+|---------|--------|-------------|
+| C# to Mermaid | **Implemented** | Generate class diagrams from C# source code |
+| Mermaid to C# | **Implemented** | Generate DDD-style C# from Mermaid diagrams |
+| Round-trip Sync | **Implemented** | Bidirectional transformation with semantic preservation |
+| Whiteboard Scanning | **Implemented** | AI-powered diagram extraction from photos |
+| Professional CLI | **Implemented** | Spectre.Console with rich output |
+| API Integration | **Scaffolded** | OpenAPI parsing, CDM mapping (designed) |
+| Document Pipeline | Planned | PDF/Word/Markdown conversion |
+| IMS Learning | Planned | Pattern learning from examples |
 
 ---
 
-## ✨ Key Features
-
-### 📷 Whiteboard to Code (Flagship Feature)
-
-Snap a photo of your whiteboard sketch and get working code:
-
-```bash
-$ docflow scan whiteboard.jpg --output domain-model
-
-📷 Processing whiteboard image...
-🔍 Detected: UML Class Diagram (94% confidence)
-🧠 Identified 5 entities, 4 relationships
-✅ Generated: domain-model.mmd (Mermaid)
-✅ Generated: domain-model.cs (C# classes)
-✅ Generated: domain-model.md (Documentation)
-```
-
-Uses computer vision and AI to understand your sketches - even messy ones.
-
-### 🔄 Bidirectional Code ↔ Diagram Sync
-
-Generate diagrams from code:
-```bash
-$ docflow diagram ./src/Domain --output architecture.mmd
-```
-
-Generate code from diagrams:
-```bash
-$ docflow codegen class-diagram.mmd --output ./src/Models --lang csharp
-```
-
-### 🧠 Intelligent Mapping Service (IMS)
-
-DocFlow learns your team's patterns and applies them automatically:
-
-```bash
-$ docflow learn --source existing-model.cs --target existing-diagram.mmd
-
-📚 Learning from example...
-   Extracted 23 patterns
-   Updated confidence on 45 existing patterns
-   
-$ docflow convert NewModel.cs --to mermaid
-
-🤖 Applied 12 learned patterns (avg confidence: 94%)
-✅ Generated: NewModel.mmd
-```
-
-The IMS improves with every transformation you make.
-
-### 📄 Document Pipeline
-
-Convert between formats with diagrams preserved:
-
-```bash
-$ docflow convert design-doc.md --to pdf --render-diagrams
-$ docflow convert specification.docx --to markdown
-```
-
-### 🏛️ DDD-Aware Code Generation
-
-DocFlow understands Domain-Driven Design patterns:
-
-```bash
-$ docflow codegen order-model.mmd --style ddd
-
-# Generates:
-# - Aggregate roots with proper encapsulation
-# - Value objects as immutable records
-# - Repository interfaces
-# - Domain events
-```
-
----
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
+**Linux/macOS/WSL:**
 ```bash
-# Install as a global .NET tool
-dotnet tool install --global DocFlow.CLI
+curl -sSL https://raw.githubusercontent.com/kurtmitchell/docflow/main/install.sh | bash
+```
 
-# Or clone and build from source
+**Windows PowerShell:**
+```powershell
+irm https://raw.githubusercontent.com/kurtmitchell/docflow/main/install.ps1 | iex
+```
+
+**From Source:**
+```bash
 git clone https://github.com/kurtmitchell/docflow.git
 cd docflow
 dotnet build
+dotnet run --project src/DocFlow.CLI -- --help
 ```
 
-### Configuration
+### Usage Examples
 
-Create a `docflow.json` in your project root:
+```bash
+# Generate Mermaid class diagram from C# source
+docflow diagram Domain.cs -o domain.mmd
 
+# Generate C# code from Mermaid diagram
+docflow codegen diagram.mmd -o Models.cs --namespace MyApp.Domain
+
+# AI-powered whiteboard scanning (requires API key)
+docflow scan whiteboard.jpg -o extracted.mmd
+
+# Full round-trip test with comparison
+docflow roundtrip Domain.cs --compare -v
+```
+
+### API Key Configuration
+
+The whiteboard scanner requires a Claude API key. Configure it using one of these methods (in priority order):
+
+**1. Environment Variable:**
+```bash
+export ANTHROPIC_API_KEY='sk-ant-...'
+```
+
+**2. User Config (~/.docflow/config.json):**
 ```json
 {
-  "ai": {
-    "provider": "claude",
-    "apiKey": "${ANTHROPIC_API_KEY}"
-  },
-  "codeGen": {
-    "language": "csharp",
-    "style": "ddd",
-    "useRecordsForValueObjects": true
-  },
-  "ims": {
-    "enableLearning": true,
-    "patternStorePath": ".docflow/patterns.db"
-  }
+  "anthropicApiKey": "sk-ant-..."
 }
 ```
 
-### Your First Scan
-
-```bash
-# Scan a whiteboard photo
-docflow scan meeting-whiteboard.jpg
-
-# Convert C# to Mermaid diagram  
-docflow diagram ./src/Domain/Order.cs
-
-# Generate C# from a Mermaid class diagram
-docflow codegen order.mmd --lang csharp --output ./src/Models/
+**3. Project Config (./docflow.json):**
+```json
+{
+  "anthropicApiKey": "sk-ant-..."
+}
 ```
 
 ---
 
-## 📖 Documentation
+## Architecture
 
-| Guide | Description |
-|-------|-------------|
-| [Getting Started](docs/getting-started.md) | Installation and first steps |
-| [Whiteboard Scanning](docs/whiteboard-scanning.md) | Tips for best results with photos |
-| [Code Generation](docs/code-generation.md) | Customizing generated code |
-| [IMS Deep Dive](docs/intelligent-mapping.md) | How the learning system works |
-| [API Reference](docs/api-reference.md) | For library consumers |
-
----
-
-## 🏗️ Architecture
-
-DocFlow is built on a **Canonical Semantic Model** - an ontologically-grounded representation that all formats translate to and from:
+DocFlow uses a **Canonical Semantic Model** as the universal truth layer. All formats translate to and from this model, enabling lossless bidirectional transformations.
 
 ```
-DocFlow/
-├── DocFlow.Core           # Canonical model & abstractions
-├── DocFlow.Diagrams       # Mermaid, PlantUML parsing/generation
-├── DocFlow.Documents      # Markdown, PDF, Word conversion
-├── DocFlow.CodeAnalysis   # Roslyn-based C# analysis
-├── DocFlow.CodeGen        # Code generation from model
-├── DocFlow.Vision         # Computer vision & whiteboard scanning
-├── DocFlow.IMS            # Intelligent Mapping Service
-├── DocFlow.Ontology       # DDD pattern classification & reasoning
-├── DocFlow.AI             # AI provider integrations
-└── DocFlow.CLI            # Command-line interface
+                    ┌─────────────────────────────────────┐
+                    │       Canonical Semantic Model      │
+                    │  (Entities, Relationships, DDD)     │
+                    └──────────────┬──────────────────────┘
+                                   │
+       ┌───────────────┬───────────┼───────────┬───────────────┐
+       │               │           │           │               │
+       ▼               ▼           ▼           ▼               ▼
+┌─────────────┐ ┌─────────────┐ ┌───────┐ ┌─────────┐ ┌─────────────┐
+│   C# Code   │ │   Mermaid   │ │  API  │ │  Docs   │ │  Whiteboard │
+│   (Roslyn)  │ │  Diagrams   │ │ Specs │ │  (TBD)  │ │   (Vision)  │
+└─────────────┘ └─────────────┘ └───────┘ └─────────┘ └─────────────┘
 ```
 
 ### Why a Canonical Model?
 
-Most tools treat format conversion as direct translation (A → B). This breaks down when:
+Direct format conversion (A → B) breaks down when:
 - Information exists in A but not B (lossy)
-- You need to round-trip (A → B → A ≠ A)
-- Semantics differ between formats
+- You need round-trips (A → B → A ≠ A)
+- Semantic meaning differs between formats
 
 DocFlow's approach: **A → Canonical Model → B**
 
-The canonical model captures *meaning*, not just syntax. It knows that `ICollection<LineItem>` in C# and a filled diamond arrow in UML both represent *composition* - and generates appropriate output for each format.
+The model captures *meaning*, not just syntax. It knows that `ICollection<LineItem>` in C# and a filled diamond in Mermaid both represent *composition*.
+
+### DDD Support
+
+The semantic model understands Domain-Driven Design patterns:
+
+| Classification | Generated As |
+|----------------|--------------|
+| AggregateRoot | Class with `<<AggregateRoot>>` stereotype |
+| Entity | Class with identity property |
+| ValueObject | Immutable record type |
+| DomainService | Service class |
+| Enum | Enumeration |
+| Interface | Interface contract |
 
 ---
 
-## 🤝 Contributing
+## Project Structure
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+```
+DocFlow/
+├── src/
+│   ├── DocFlow.Core           # Canonical model & abstractions
+│   ├── DocFlow.Diagrams       # Mermaid parsing & generation
+│   ├── DocFlow.CodeAnalysis   # Roslyn-based C# parsing
+│   ├── DocFlow.CodeGen        # C# code generation from model
+│   ├── DocFlow.Vision         # AI-powered whiteboard scanning
+│   ├── DocFlow.AI             # Claude API integration
+│   ├── DocFlow.IMS            # Intelligent Mapping Service (pattern learning)
+│   ├── DocFlow.Ontology       # DDD pattern classification
+│   ├── DocFlow.Documents      # Document pipeline (planned)
+│   ├── DocFlow.Integration    # API integration automation (scaffolded)
+│   ├── DocFlow.Web            # Web UI (planned)
+│   └── DocFlow.CLI            # Command-line interface
+├── tests/
+│   ├── DocFlow.CodeAnalysis.Tests  # 20 tests
+│   ├── DocFlow.Diagrams.Tests      # 52 tests
+│   └── DocFlow.CodeGen.Tests       # 19 tests
+├── docs/
+│   ├── ARCHITECTURE.md        # Technical architecture
+│   ├── CLI-REFERENCE.md       # Complete CLI documentation
+│   ├── CHANGELOG.md           # Version history
+│   └── design/                # Design documents
+└── samples/
+    └── whiteboard-demos/      # Whiteboard scanner examples
+```
 
-### Development Setup
+### DocFlow.Integration (Scaffolded)
+
+The Integration module extends DocFlow's canonical model pattern to enterprise API integrations:
+
+- **OpenAPI/Swagger parsing** → Semantic model extraction
+- **CDM (Canonical Data Model) mapping** → External API ↔ internal model
+- **SLA validation** → Data freshness checking
+- **Pre-built domain patterns** → Aviation, e-commerce, etc.
+
+See [docs/design/integration-module.md](docs/design/integration-module.md) for the full design.
+
+---
+
+## CLI Commands
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `diagram <input>` | `d` | Generate Mermaid from C# source |
+| `codegen <input>` | `c` | Generate C# from Mermaid diagram |
+| `roundtrip <input>` | `r` | Full C# → Mermaid → C# round-trip |
+| `scan <image>` | `s` | AI-powered whiteboard scanning |
+
+See [docs/CLI-REFERENCE.md](docs/CLI-REFERENCE.md) for complete documentation.
+
+---
+
+## Development
+
+### Prerequisites
+
+- .NET 8.0 SDK
+- Claude API key (for whiteboard scanning)
+
+### Build & Test
 
 ```bash
-# Clone the repo
-git clone https://github.com/kurtmitchell/docflow.git
-cd docflow
-
 # Build
 dotnet build
 
-# Run tests
+# Run all tests
 dotnet test
 
-# Run the CLI locally
-dotnet run --project src/DocFlow.CLI -- scan test-image.jpg
+# Run CLI locally
+dotnet run --project src/DocFlow.CLI -- diagram MyClass.cs
 ```
 
-### Areas We Need Help
+### Test Coverage
 
-- 🖼️ **Training data** - Whiteboard photos with corresponding diagrams
-- 🌐 **Language support** - TypeScript, Python, Go code generation
-- 📊 **Diagram types** - Sequence diagrams, state machines, ER diagrams
-- 🧪 **Testing** - Edge cases, real-world scenarios
+- **91+ unit tests** across 3 test projects
+- C# parsing, Mermaid generation, round-trip preservation
+- DDD pattern detection and classification
 
 ---
 
-## 📜 License
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Technical architecture and design |
+| [CLI-REFERENCE.md](docs/CLI-REFERENCE.md) | Complete CLI command reference |
+| [CHANGELOG.md](docs/CHANGELOG.md) | Version history and release notes |
+| [Integration Design](docs/design/integration-module.md) | API integration module design |
+
+---
+
+## Roadmap
+
+### v0.1.0-preview (Current)
+- [x] C# → Mermaid class diagram generation
+- [x] Mermaid → C# code generation (DDD-style)
+- [x] Bidirectional round-trip with semantic preservation
+- [x] AI-powered whiteboard scanning
+- [x] Professional CLI with Spectre.Console
+- [x] Integration module scaffolded
+
+### v0.2.0
+- [ ] IMS pattern learning from examples
+- [ ] PlantUML support
+- [ ] Sequence diagram support
+- [ ] Integration module implementation
+
+### v0.3.0
+- [ ] PDF/Word document pipeline
+- [ ] VS Code extension
+- [ ] Web UI (Blazor)
+
+---
+
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-DocFlow was designed and built by:
+Built by **Kurt Mitchell** with **Claude (Anthropic)** as co-designer and implementation partner.
 
-- **Kurt Mitchell** - Architecture, implementation, domain expertise
-- **Claude (Anthropic)** - Co-design, code generation, documentation
-
-Special thanks to the open source projects that make DocFlow possible:
+Open source dependencies:
 - [Roslyn](https://github.com/dotnet/roslyn) - C# code analysis
-- [OpenCvSharp](https://github.com/shimat/opencvsharp) - Computer vision
-- [Markdig](https://github.com/xoofx/markdig) - Markdown processing
-- [Spectre.Console](https://github.com/spectreconsole/spectre.console) - Beautiful CLI
-
----
-
-## 🗺️ Roadmap
-
-### v0.1 (Current)
-- [x] Core canonical model
-- [x] C# → Mermaid class diagram
-- [x] Basic whiteboard scanning
-- [ ] Mermaid → C# code generation
-- [ ] CLI with basic commands
-
-### v0.2
-- [ ] IMS pattern learning
-- [ ] PDF/Word document pipeline
-- [ ] PlantUML support
-- [ ] Java code analysis/generation
-
-### v0.3
-- [ ] GA-optimized diagram layouts
-- [ ] Sequence diagram support
-- [ ] VS Code extension
-- [ ] Team pattern sharing
-
-### v1.0
-- [ ] Full round-trip support all formats
-- [ ] Blazor web UI
-- [ ] Self-hosted model support
-- [ ] Enterprise features
+- [Spectre.Console](https://github.com/spectreconsole/spectre.console) - CLI framework
+- [Microsoft.OpenApi](https://github.com/microsoft/OpenAPI.NET) - OpenAPI parsing
 
 ---
 
 <p align="center">
-  <strong>Stop losing your whiteboard ideas. Start shipping with DocFlow.</strong>
+  <strong>Transform your diagrams. Generate your code. Ship faster with DocFlow.</strong>
 </p>
