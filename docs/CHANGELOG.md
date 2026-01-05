@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Proper access modifier mapping (+, -, #)
 
 #### Round-Trip Support
-- Full bidirectional transformation: C# → Mermaid → C#
+- Full bidirectional transformation: C# -> Mermaid -> C#
 - Semantic preservation across transformations
 - `--compare` flag for diff visualization
 
@@ -53,38 +53,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### CLI (DocFlow.CLI)
 - Professional CLI with System.CommandLine
-- Rich output with Spectre.Console (colors, tables, panels)
+- Rich output with Spectre.Console (colors, tables, panels, progress bars)
 - ASCII art banner
 - Commands:
   - `diagram` (alias: `d`) - Generate Mermaid from C#
   - `codegen` (alias: `c`) - Generate C# from Mermaid
   - `roundtrip` (alias: `r`) - Full round-trip test
   - `scan` (alias: `s`) - Whiteboard scanning
+  - `integrate` - API integration commands
 - Global options: `--verbose`, `--quiet`
 
-#### Integration Module (DocFlow.Integration) - Scaffolded
-- OpenAPI 3.x parser foundation (`OpenApiParser`)
-- CDM mapping engine design (`CdmMapper`)
-- SLA validation for data freshness (`SlaValidator`)
-- Pre-built aviation domain patterns (`ApiMappingPatterns`)
-- Integration specification model (`IntegrationSpec`)
+#### Integration Module (DocFlow.Integration)
+Complete API integration automation extending the canonical model:
+
+**CDM Mapping Analysis** (`docflow integrate analyze`)
+- Parse OpenAPI 3.x specifications
+- Extract entities, endpoints, parameters
+- Multi-pass field matching algorithm:
+  - Pass 1: Exact name matches (95% confidence)
+  - Pass 2: ID field matches (85% confidence)
+  - Pass 3: Contains matches (75% confidence)
+  - Pass 4: Foreign key patterns (70% confidence)
+  - Pass 5: Date/time field matches (70% confidence)
+- Semantic entity matching (Pet->Product, etc.)
+- Confidence scoring with reasoning
+- Rich CLI output with color-coded confidence levels
+- Threshold filtering
+
+**SLA Validation** (`docflow integrate sla`)
+- Data freshness validation against SLA requirements
+- Duration parsing: `30s`, `5m`, `1h`, `500ms`
+- Multi-sample collection with configurable intervals
+- Live progress display
+- Compliance verdicts:
+  - COMPLIANT (100%)
+  - MARGINALLY COMPLIANT (90-99%)
+  - MINOR VIOLATION (50-89%)
+  - SEVERE VIOLATION (0-49%)
+- JSON report export
+
+**Code Generation** (`docflow integrate generate`)
+- External DTOs with `[JsonPropertyName]` attributes
+- AutoMapper profiles with:
+  - Confidence comments for each mapping
+  - TODO markers for unmapped fields
+  - Unique enum mapping methods
+  - No duplicate property mappings
+- Typed HTTP client interfaces
+- FluentValidation validators with:
+  - Required field validation
+  - String length constraints
+- Rich CLI output showing generated files
+
+**Pre-built Patterns**
+- Aviation domain patterns (tail_num, arr_time, pax, etc.)
+- DateTime conversion patterns
+- Identifier patterns (primary key, foreign key)
+- Contact patterns (email, phone)
+- Audit patterns (created_at, updated_at)
 
 #### Testing
-- 91+ unit tests across 3 test projects
-- DocFlow.CodeAnalysis.Tests (20 tests)
-- DocFlow.Diagrams.Tests (52 tests)
-- DocFlow.CodeGen.Tests (19 tests)
+- 91 unit tests across 3 test projects:
+  - DocFlow.CodeAnalysis.Tests: 20 tests
+  - DocFlow.Diagrams.Tests: 52 tests
+  - DocFlow.CodeGen.Tests: 19 tests
 
 #### Documentation
 - Comprehensive README with feature status
 - CLAUDE.md for AI assistant context
 - Architecture documentation
-- CLI reference
+- CLI reference with all commands
 - Integration module design document
+- Sample files for testing:
+  - `samples/whiteboard-demos/` - Whiteboard examples
+  - `samples/integration-demos/` - OpenAPI specs and CDM samples
 
 ### Technical Details
 
 - **.NET 8.0** with C# 12 features
+- **12 projects** in solution (all compiling)
 - **Nullable reference types** enabled throughout
 - **Async/await** with CancellationToken support
 - **Records** for immutable types
@@ -103,10 +150,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Planned for v0.2.0
-- IMS (Intelligent Mapping Service) pattern learning
+- IMS (Intelligent Mapping Service) pattern learning from examples
 - PlantUML support
 - Sequence diagram support
-- Full Integration module implementation
+- GraphQL schema parsing
 
 ### Planned for v0.3.0
 - PDF/Word document pipeline

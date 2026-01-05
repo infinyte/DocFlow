@@ -1,10 +1,8 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34309.116
 MinimumVisualStudioVersion = 10.0.40219.1
-
-# Core Projects
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocFlow.Core", "src\DocFlow.Core\DocFlow.Core.csproj", "{A1B2C3D4-1234-5678-9ABC-DEF012345678}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocFlow.Diagrams", "src\DocFlow.Diagrams\DocFlow.Diagrams.csproj", "{B2C3D4E5-2345-6789-ABCD-EF0123456789}"
@@ -27,21 +25,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocFlow.CLI", "src\DocFlow.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocFlow.Integration", "src\DocFlow.Integration\DocFlow.Integration.csproj", "{F8A9B0C1-2345-6789-ABCD-456789012345}"
 EndProject
-
-# Test Projects
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocFlow.CodeAnalysis.Tests", "tests\DocFlow.CodeAnalysis.Tests\DocFlow.CodeAnalysis.Tests.csproj", "{C5D6E7F8-F012-3456-789A-123456789012}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocFlow.Diagrams.Tests", "tests\DocFlow.Diagrams.Tests\DocFlow.Diagrams.Tests.csproj", "{D6E7F8A9-0123-4567-89AB-234567890123}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocFlow.CodeGen.Tests", "tests\DocFlow.CodeGen.Tests\DocFlow.CodeGen.Tests.csproj", "{E7F8A9B0-1234-5678-9ABC-345678901234}"
-EndProject
-
-# Solution Folders
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{10000000-0000-0000-0000-000000000001}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{20000000-0000-0000-0000-000000000002}"
 EndProject
-
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -100,10 +91,6 @@ Global
 		{D6E7F8A9-0123-4567-89AB-234567890123}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6E7F8A9-0123-4567-89AB-234567890123}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6E7F8A9-0123-4567-89AB-234567890123}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E7F8A9B0-1234-5678-9ABC-345678901234}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E7F8A9B0-1234-5678-9ABC-345678901234}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E7F8A9B0-1234-5678-9ABC-345678901234}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E7F8A9B0-1234-5678-9ABC-345678901234}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -122,6 +109,5 @@ Global
 		{F8A9B0C1-2345-6789-ABCD-456789012345} = {10000000-0000-0000-0000-000000000001}
 		{C5D6E7F8-F012-3456-789A-123456789012} = {20000000-0000-0000-0000-000000000002}
 		{D6E7F8A9-0123-4567-89AB-234567890123} = {20000000-0000-0000-0000-000000000002}
-		{E7F8A9B0-1234-5678-9ABC-345678901234} = {20000000-0000-0000-0000-000000000002}
 	EndGlobalSection
 EndGlobal

@@ -28,7 +28,11 @@
       "Bash(unzip:*)",
       "Bash(/root/.dotnet/dotnet run --project src/DocFlow.CLI/DocFlow.CLI.csproj -- codegen test-input.mmd -o test-output.cs -n TestNamespace)",
       "Bash(/root/.dotnet/dotnet run:*)",
-      "Bash(/root/.dotnet/dotnet test:*)"
+      "Bash(/root/.dotnet/dotnet test:*)",
+      "Bash(mkdir:*)",
+      "Bash(/root/.dotnet/dotnet clean:*)",
+      "Bash(lsof:*)",
+      "Bash(/root/.dotnet/dotnet sln:*)"
     ]
   }
 }
