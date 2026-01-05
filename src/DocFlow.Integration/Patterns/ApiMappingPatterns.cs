@@ -124,7 +124,128 @@ public static class ApiMappingPatterns
                 ["description"] = "Reservation identifier"
             }
         };
-        
+
+        public static readonly PatternRule HomeBase = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(home[_-]?base|base[_-]?(airport|icao|location)|hangar[_-]?location)",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "HomeBaseIcao",
+                ["description"] = "Aircraft home base airport"
+            }
+        };
+
+        public static readonly PatternRule FuelPrice = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(price|cost)[_-]?per[_-]?(gal(lon)?|liter|lb)",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "PricePerGallon",
+                ["description"] = "Fuel price per unit"
+            }
+        };
+
+        public static readonly PatternRule MinFuelQuantity = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(min(imum)?)[_-]?(qty|quantity|gal(lons)?|amount)",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "MinimumGallons",
+                ["description"] = "Minimum fuel quantity"
+            }
+        };
+
+        public static readonly PatternRule AircraftCapacity = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(max[_-]?)?(passenger|pax|seat)[_-]?(cap(acity)?|count|num)?|capacity",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "MaxPassengers",
+                ["description"] = "Aircraft passenger capacity"
+            }
+        };
+
+        public static readonly PatternRule FacilityName = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(facility|fbo|handler)[_-]?name|name$",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "FacilityName",
+                ["description"] = "FBO/facility name"
+            }
+        };
+
+        public static readonly PatternRule QuoteValidity = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(valid|expires?)[_-]?(until|thru|through|date|time)?|expir(y|ation)",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "ValidUntil",
+                ["description"] = "Quote expiration date"
+            }
+        };
+
+        public static readonly PatternRule IcaoCode = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(icao|iata)[_-]?(code|id)?|airport[_-]?code",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "IcaoCode",
+                ["description"] = "Airport ICAO/IATA code"
+            }
+        };
+
+        public static readonly PatternRule CrewRole = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(crew)?[_-]?(role|position|duty)|pic|sic|captain|first[_-]?officer",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "Role",
+                ["description"] = "Crew member role"
+            }
+        };
+
+        public static readonly PatternRule FlightLegId = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(flight|leg|segment)[_-]?(id|num|number)?",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "FlightLegId",
+                ["description"] = "Flight leg identifier"
+            }
+        };
+
+        public static readonly PatternRule ScheduledDeparture = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(sched(uled)?|planned|estimated)[_-]?(dep(arture)?|takeoff)[_-]?(time|dt|date)?",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "ScheduledDeparture",
+                ["description"] = "Scheduled departure time"
+            }
+        };
+
+        public static readonly PatternRule ScheduledArrival = new()
+        {
+            Type = PatternRuleType.NamePattern,
+            Condition = @"(?i)(sched(uled)?|planned|estimated)[_-]?(arr(ival)?|landing)[_-]?(time|dt|date)?",
+            Parameters = new Dictionary<string, object>
+            {
+                ["targetField"] = "ScheduledArrival",
+                ["description"] = "Scheduled arrival time"
+            }
+        };
+
         /// <summary>
         /// Get all aviation patterns
         /// </summary>
@@ -132,7 +253,10 @@ public static class ApiMappingPatterns
         {
             TailNumber, FlightNumber, ArrivalTime, DepartureTime,
             OriginAirport, DestinationAirport, PassengerCount,
-            FuelQuantity, FboIdentifier, ReservationId
+            FuelQuantity, FboIdentifier, ReservationId,
+            HomeBase, FuelPrice, MinFuelQuantity, AircraftCapacity,
+            FacilityName, QuoteValidity, IcaoCode, CrewRole,
+            FlightLegId, ScheduledDeparture, ScheduledArrival
         };
     }
     

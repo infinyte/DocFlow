@@ -864,9 +864,159 @@ public class Program
         var command = new Command("integrate", "API integration and CDM mapping tools");
         command.AddAlias("i");
 
+        command.AddCommand(BuildParseCommand());
         command.AddCommand(BuildAnalyzeCommand());
         command.AddCommand(BuildSlaCommand());
         command.AddCommand(BuildGenerateCommand());
+
+        return command;
+    }
+
+    private static Command BuildParseCommand()
+    {
+        var specArg = new Argument<FileInfo>(
+            name: "spec",
+            description: "OpenAPI specification file (JSON or YAML)");
+
+        var verboseOption = new Option<bool>(
+            aliases: ["-v", "--verbose"],
+            description: "Show detailed entity and endpoint information");
+
+        var command = new Command("parse", "Parse OpenAPI spec and display entities/endpoints")
+        {
+            specArg,
+            verboseOption
+        };
+
+        command.SetHandler(async (FileInfo spec, bool verbose) =>
+        {
+            ShowBanner();
+
+            if (!spec.Exists)
+            {
+                AnsiConsole.MarkupLine($"[red]Error:[/] File not found: {spec.FullName}");
+                return;
+            }
+
+            AnsiConsole.MarkupLine("Parsing OpenAPI specification...");
+
+            var parser = new OpenApiParser();
+            var schemaResult = await parser.ParseSchemaAsync(ParserInput.FromFile(spec.FullName));
+
+            if (!schemaResult.Success)
+            {
+                AnsiConsole.MarkupLine("[red]Error parsing OpenAPI spec:[/]");
+                foreach (var error in schemaResult.Errors)
+                {
+                    AnsiConsole.MarkupLine($"  [red]*[/] {Markup.Escape(error.Code)}: {Markup.Escape(error.Message)}");
+                }
+                return;
+            }
+
+            var model = schemaResult.Model;
+            var externalInfo = schemaResult.ExternalSystem!;
+            var endpoints = schemaResult.Endpoints;
+
+            // Header panel
+            var headerPanel = new Panel(
+                $"[bold]API:[/] [cyan]{Markup.Escape(externalInfo.Name)}[/] [dim]{Markup.Escape(externalInfo.Version)}[/]\n" +
+                $"[bold]Entities:[/] {model.Entities.Count}\n" +
+                $"[bold]Endpoints:[/] {endpoints.Count}")
+            {
+                Header = new PanelHeader("[bold blue]OpenAPI Specification[/]"),
+                Border = BoxBorder.Rounded
+            };
+            AnsiConsole.Write(headerPanel);
+            AnsiConsole.WriteLine();
+
+            // Entities table
+            var entityTable = new Table()
+                .Border(TableBorder.Rounded)
+                .AddColumn("Entity")
+                .AddColumn(new TableColumn("Properties").Centered())
+                .AddColumn("Type");
+
+            foreach (var entity in model.Entities.Values.OrderBy(e => e.Name))
+            {
+                entityTable.AddRow(
+                    $"[cyan]{Markup.Escape(entity.Name)}[/]",
+                    entity.Properties.Count.ToString(),
+                    entity.Classification.ToString());
+            }
+
+            var entityPanel = new Panel(entityTable)
+            {
+                Header = new PanelHeader("[bold]Entities[/]"),
+                Border = BoxBorder.Rounded
+            };
+            AnsiConsole.Write(entityPanel);
+            AnsiConsole.WriteLine();
+
+            // Endpoints table
+            var endpointTable = new Table()
+                .Border(TableBorder.Rounded)
+                .AddColumn("Method")
+                .AddColumn("Path")
+                .AddColumn("Operation");
+
+            foreach (var endpoint in endpoints.OrderBy(e => e.Path).ThenBy(e => e.Method))
+            {
+                var methodColor = endpoint.Method switch
+                {
+                    Integration.Models.HttpMethod.Get => "green",
+                    Integration.Models.HttpMethod.Post => "blue",
+                    Integration.Models.HttpMethod.Put => "yellow",
+                    Integration.Models.HttpMethod.Patch => "yellow",
+                    Integration.Models.HttpMethod.Delete => "red",
+                    _ => "white"
+                };
+
+                endpointTable.AddRow(
+                    $"[{methodColor}]{endpoint.Method.ToString().ToUpperInvariant()}[/]",
+                    Markup.Escape(endpoint.Path),
+                    Markup.Escape(endpoint.Id ?? "-"));
+            }
+
+            var endpointPanel = new Panel(endpointTable)
+            {
+                Header = new PanelHeader("[bold]Endpoints[/]"),
+                Border = BoxBorder.Rounded
+            };
+            AnsiConsole.Write(endpointPanel);
+
+            // Verbose: show entity details
+            if (verbose)
+            {
+                AnsiConsole.WriteLine();
+
+                foreach (var entity in model.Entities.Values.OrderBy(e => e.Name))
+                {
+                    var propTable = new Table()
+                        .Border(TableBorder.Simple)
+                        .AddColumn("Property")
+                        .AddColumn("Type")
+                        .AddColumn("Required");
+
+                    foreach (var prop in entity.Properties.OrderBy(p => p.Name))
+                    {
+                        propTable.AddRow(
+                            Markup.Escape(prop.Name),
+                            $"[dim]{Markup.Escape(prop.Type.Name)}[/]",
+                            prop.IsRequired ? "[green]Yes[/]" : "[dim]No[/]");
+                    }
+
+                    var propPanel = new Panel(propTable)
+                    {
+                        Header = new PanelHeader($"[bold]{Markup.Escape(entity.Name)}[/]"),
+                        Border = BoxBorder.Rounded
+                    };
+                    AnsiConsole.Write(propPanel);
+                }
+            }
+
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[dim]Parse completed[/]");
+        }, specArg, verboseOption);
 
         return command;
     }
@@ -1138,10 +1288,10 @@ public class Program
 
             var cdmEntity = mapping.CdmEntityName == mapping.ExternalEntityName && mapping.Confidence < 0.5
                 ? "[dim]???[/]"
-                : $"[cyan]{mapping.CdmEntityName}[/]";
+                : $"[cyan]{Markup.Escape(mapping.CdmEntityName)}[/]";
 
             entityTable.AddRow(
-                mapping.ExternalEntityName,
+                Markup.Escape(mapping.ExternalEntityName),
                 cdmEntity,
                 confidenceDisplay,
                 statusDisplay);
@@ -1151,7 +1301,7 @@ public class Program
         foreach (var unmapped in result.UnmappedEntities)
         {
             entityTable.AddRow(
-                unmapped,
+                Markup.Escape(unmapped),
                 "[dim]???[/]",
                 "[red]0%[/]",
                 "[red]? Unmapped[/]");
@@ -1188,18 +1338,18 @@ public class Program
                 {
                     var targetField = field.TargetField == "???"
                         ? "[dim]???[/]"
-                        : $"[cyan]{field.TargetField}[/]";
+                        : $"[cyan]{Markup.Escape(field.TargetField)}[/]";
 
                     fieldTable.AddRow(
-                        field.SourceField,
+                        Markup.Escape(field.SourceField),
                         targetField,
                         FormatConfidence(field.Confidence),
-                        field.Reasoning ?? "");
+                        Markup.Escape(field.Reasoning ?? ""));
                 }
 
                 var fieldPanel = new Panel(fieldTable)
                 {
-                    Header = new PanelHeader($"[bold]{mapping.ExternalEntityName} -> {mapping.CdmEntityName}[/]"),
+                    Header = new PanelHeader($"[bold]{Markup.Escape(mapping.ExternalEntityName)} -> {Markup.Escape(mapping.CdmEntityName)}[/]"),
                     Border = BoxBorder.Rounded
                 };
                 AnsiConsole.Write(fieldPanel);

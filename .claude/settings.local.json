@@ -30,7 +30,9 @@
       "Bash(/root/.dotnet/dotnet run:*)",
       "Bash(/root/.dotnet/dotnet test:*)",
       "Bash(mkdir:*)",
-      "Bash(/root/.dotnet/dotnet clean:*)"
+      "Bash(/root/.dotnet/dotnet clean:*)",
+      "Bash(lsof:*)",
+      "Bash(/root/.dotnet/dotnet sln:*)"
     ]
   }
 }

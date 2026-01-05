@@ -19,7 +19,7 @@ DocFlow is an intelligent documentation and modeling toolkit. Current implementa
 
 **Solution Stats:**
 - 12 projects compiling
-- 91 tests passing (20 CodeAnalysis + 52 Diagrams + 19 CodeGen)
+- 72 tests passing (20 CodeAnalysis + 52 Diagrams)
 
 ## Build and Test Commands
 
@@ -27,13 +27,12 @@ DocFlow is an intelligent documentation and modeling toolkit. Current implementa
 # Build the entire solution
 dotnet build
 
-# Run all tests (91 tests across 3 projects)
+# Run all tests (72 tests across 2 projects)
 dotnet test
 
 # Run specific test project
 dotnet test tests/DocFlow.CodeAnalysis.Tests   # 20 tests
 dotnet test tests/DocFlow.Diagrams.Tests       # 52 tests
-dotnet test tests/DocFlow.CodeGen.Tests        # 19 tests
 
 # Run a single test by filter
 dotnet test --filter "FullyQualifiedName~TestMethodName"
