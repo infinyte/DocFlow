@@ -21,6 +21,7 @@ These options are available on all commands:
 | `--verbose` | `-v` | Show detailed output including entity tables and full generated content |
 | `--quiet` | `-q` | Minimal output, only errors. Useful for scripting |
 | `--help` | `-h`, `-?` | Show help and usage information |
+| `--version` | | Show version information |
 
 ---
 
@@ -134,7 +135,7 @@ docflow codegen diagram.mmd -o src/Models/Generated.cs
 
 ### roundtrip
 
-Perform a full round-trip transformation: C# → Mermaid → C#
+Perform a full round-trip transformation: C# -> Mermaid -> C#
 
 **Usage:**
 ```bash
@@ -262,18 +263,210 @@ The scan command requires a Claude API key. Configure using one of:
 
 ---
 
+### integrate
+
+API integration commands for CDM mapping, SLA validation, and code generation.
+
+#### integrate analyze
+
+Analyze mapping between external API and your Canonical Data Model.
+
+**Usage:**
+```bash
+docflow integrate analyze <spec> --cdm <path> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `<spec>` | OpenAPI specification file |
+
+**Options:**
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--cdm <path>` | | Path to CDM C# files (required) |
+| `--output <file>` | `-o` | Save mapping report as JSON |
+| `--threshold <percent>` | | Filter by minimum confidence (0-100) |
+| `--verbose` | `-v` | Show field-level mappings |
+
+**Examples:**
+
+```bash
+# Basic analysis
+docflow integrate analyze petstore.json --cdm Models/Entities.cs
+
+# With threshold filter
+docflow integrate analyze api.json --cdm Domain/ --threshold 70
+
+# Verbose with JSON output
+docflow integrate analyze api.json --cdm Domain/ -v -o report.json
+```
+
+**Output:**
+
+- Overall mapping confidence
+- Entity mapping table with confidence scores
+- Color-coded confidence levels:
+  - Green (90-100%): High confidence
+  - Yellow (70-89%): Medium confidence
+  - Red (0-69%): Low confidence - needs review
+- Field-level mappings with reasoning (with `-v`)
+
+---
+
+#### integrate sla
+
+Validate SLA compliance for data freshness.
+
+**Usage:**
+```bash
+docflow integrate sla <url> --expected <duration> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `<url>` | API endpoint URL to validate |
+
+**Options:**
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--expected <duration>` | | Expected maximum data age (required) |
+| `--samples <count>` | | Number of samples to collect (default: 10) |
+| `--interval <duration>` | | Time between samples (default: 5s) |
+| `--timestamp-path <path>` | | JSON path to timestamp field |
+| `--header <key=value>` | | Add HTTP header (repeatable) |
+| `--output <file>` | `-o` | Save report as JSON |
+| `--verbose` | `-v` | Show individual samples |
+
+**Duration Format:**
+
+- `500ms` - milliseconds
+- `30s` - seconds
+- `5m` - minutes
+- `1h` - hours
+
+**Examples:**
+
+```bash
+# Basic SLA check
+docflow integrate sla https://api.example.com/data --expected 30s
+
+# With custom samples and interval
+docflow integrate sla https://api.example.com/status --expected 1m --samples 20 --interval 10s
+
+# With authentication header
+docflow integrate sla https://api.example.com/data --expected 30s --header "Authorization=Bearer token123"
+
+# Save report
+docflow integrate sla https://api.example.com/data --expected 30s -o sla-report.json -v
+```
+
+**Output:**
+
+- Live progress bar during sampling
+- Verdict with color coding:
+  - COMPLIANT (green): 100% samples within SLA
+  - MARGINALLY COMPLIANT (yellow): 90-99% within SLA
+  - MINOR VIOLATION (orange): 50-89% within SLA
+  - SEVERE VIOLATION (red): <50% within SLA
+- Statistics: expected, average, min, max ages
+- Individual sample details (with `-v`)
+
+**Exit Codes:**
+
+| Code | Description |
+|------|-------------|
+| 0 | COMPLIANT or MARGINALLY COMPLIANT |
+| 2 | MINOR VIOLATION or SEVERE VIOLATION |
+
+---
+
+#### integrate generate
+
+Generate integration code from OpenAPI spec and CDM mappings.
+
+**Usage:**
+```bash
+docflow integrate generate <spec> --cdm <path> --output <dir> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `<spec>` | OpenAPI specification file |
+
+**Options:**
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--cdm <path>` | | Path to CDM C# files (required) |
+| `--output <dir>` | `-o` | Output directory (required) |
+| `--namespace <name>` | `-n` | Namespace for generated code (default: Integration.Generated) |
+| `--generate <types>` | | What to generate (default: all) |
+| `--verbose` | `-v` | Show generation details |
+
+**Generate Types:**
+
+| Type | Description |
+|------|-------------|
+| `dtos` | External DTOs with `[JsonPropertyName]` attributes |
+| `mappers` | AutoMapper profiles with confidence comments |
+| `client` | Typed HTTP client interface |
+| `validators` | FluentValidation validators |
+| `all` | All of the above (default) |
+
+**Examples:**
+
+```bash
+# Generate all artifacts
+docflow integrate generate petstore.json --cdm Models/ -o Generated/
+
+# Custom namespace
+docflow integrate generate api.json --cdm Domain/ -o src/Integration -n MyApp.Integration
+
+# Generate only DTOs and mappers
+docflow integrate generate api.json --cdm Domain/ -o Generated/ --generate dtos,mappers
+
+# Verbose output
+docflow integrate generate api.json --cdm Domain/ -o Generated/ -v
+```
+
+**Generated Files:**
+
+| Directory | Contents |
+|-----------|----------|
+| `External/` | DTO classes with JSON attributes |
+| `Mapping/` | AutoMapper profile with confidence comments |
+| `Client/` | HTTP client interface |
+| `Validation/` | FluentValidation validators |
+
+**Output:**
+
+- Table of generated files with line counts
+- Count of mappings needing manual review
+- Total files and lines generated
+
+---
+
 ## Exit Codes
 
 | Code | Description |
 |------|-------------|
 | 0 | Success |
 | 1 | Error (file not found, parse error, generation error, missing config) |
+| 2 | SLA Violation (for `integrate sla` command) |
 
 ---
 
 ## Examples
 
-### Full Workflow
+### Full Workflow: Whiteboard to Code
 
 ```bash
 # 1. Start with a whiteboard photo
@@ -289,6 +482,22 @@ docflow diagram Models.cs -o domain-updated.mmd
 docflow roundtrip Models.cs --compare -v
 ```
 
+### Full Workflow: API Integration
+
+```bash
+# 1. Parse the OpenAPI spec
+docflow integrate parse vendor-api.json -v
+
+# 2. Analyze mapping to your CDM
+docflow integrate analyze vendor-api.json --cdm src/Domain/Entities.cs --threshold 70 -v
+
+# 3. Validate SLA compliance
+docflow integrate sla https://vendor-api.com/data --expected 30s --samples 20
+
+# 4. Generate integration code
+docflow integrate generate vendor-api.json --cdm src/Domain/ -o src/Integration -n MyApp.Integration.Vendor
+```
+
 ### Scripting
 
 ```bash
@@ -301,6 +510,14 @@ if docflow codegen diagram.mmd -q; then
     echo "Success"
 else
     echo "Failed"
+fi
+
+# SLA monitoring in CI/CD
+if docflow integrate sla https://api.example.com/health --expected 5s --samples 5; then
+    echo "SLA: PASS"
+else
+    echo "SLA: FAIL"
+    exit 1
 fi
 ```
 
@@ -325,3 +542,6 @@ docflow diagram src/Domain -r -o full-model.mmd
 3. **Use quiet mode** (`-q`) in CI/CD pipelines
 4. **Use `--compare`** with roundtrip to verify semantic preservation
 5. **Set up user config** (`~/.docflow/config.json`) to avoid repeating API key setup
+6. **Use threshold filtering** with `integrate analyze` to focus on low-confidence mappings
+7. **Review TODO comments** in generated AutoMapper profiles for manual mapping needs
+8. **Run SLA validation** before production deployments to catch data freshness issues

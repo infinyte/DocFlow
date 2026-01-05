@@ -1,21 +1,13 @@
 # DocFlow.Integration Module - Design Document
 
-## Status: Scaffolded (Core Types Implemented, Full Features Planned)
+## Status: Complete (v0.1.0-preview)
 
-The Integration module has been scaffolded with core types and interfaces. The OpenAPI parser, schema models, and SLA validator foundations are in place. Full implementation is planned for a future release.
+The Integration module is fully implemented with three CLI subcommands for API integration automation.
 
-**Implemented:**
-- `ISchemaParser` interface and `SchemaParseResult`
-- `OpenApiParser` foundation
-- `IntegrationSpec`, `ApiEndpoint`, `FieldMapping` models
-- `ApiMappingPatterns` with aviation domain patterns
-- `SlaValidator` structure
-
-**Planned:**
-- Full OpenAPI/Swagger parsing
-- CDM mapping engine
-- Code generation (DTOs, AutoMapper, HTTP clients)
-- CLI commands for integration workflows
+**Implemented Features:**
+- `docflow integrate analyze` - OpenAPI parsing and CDM mapping analysis with confidence scores
+- `docflow integrate sla` - SLA data freshness validation
+- `docflow integrate generate` - Code generation (DTOs, AutoMapper, HTTP clients, validators)
 
 ---
 
@@ -25,30 +17,30 @@ DocFlow.Integration extends the platform from documents/code into **enterprise A
 
 ## Core Insight
 
-The same architecture that transforms C# ↔ Mermaid can transform External API ↔ CDM:
+The same architecture that transforms C# <-> Mermaid can transform External API <-> CDM:
 
 ```
 DOCUMENTS/CODE DOMAIN              API INTEGRATION DOMAIN
-──────────────────────             ─────────────────────
+----------------------             ---------------------
 
-┌─────────────┐                    ┌─────────────────┐
-│   C# Code   │                    │  OpenAPI Spec   │
-├─────────────┤                    ├─────────────────┤
-│   Mermaid   │                    │  JSON Samples   │
-├─────────────┤                    ├─────────────────┤
-│  PlantUML   │                    │  GraphQL Schema │
-└──────┬──────┘                    └────────┬────────┘
-       │         ┌──────────────────┐       │
-       └────────►│    CANONICAL     │◄──────┘
-                 │  SEMANTIC MODEL  │
-                 └────────┬─────────┘
-                          │
-       ┌──────────────────┼──────────────────┐
-       ▼                  ▼                  ▼
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  Generated  │    │  Generated  │    │ Integration │
-│    Code     │    │  Diagrams   │    │    Code     │
-└─────────────┘    └─────────────┘    └─────────────┘
++-------------+                    +-----------------+
+|   C# Code   |                    |  OpenAPI Spec   |
++-------------+                    +-----------------+
+|   Mermaid   |                    |  JSON Samples   |
++-------------+                    +-----------------+
+|  PlantUML   |                    |  GraphQL Schema |
++------+------+                    +--------+--------+
+       |         +----------------+         |
+       +-------->|    CANONICAL   |<--------+
+                 |  SEMANTIC MODEL|
+                 +--------+-------+
+                          |
+       +------------------+------------------+
+       v                  v                  v
++-------------+    +-------------+    +-------------+
+|  Generated  |    |  Generated  |    | Integration |
+|    Code     |    |  Diagrams   |    |    Code     |
++-------------+    +-------------+    +-------------+
 ```
 
 The IMS learns patterns in both domains!
@@ -59,34 +51,30 @@ The IMS learns patterns in both domains!
 
 ```
 src/DocFlow.Integration/
-├── Schemas/                    # External API schema parsing
-│   ├── OpenApi/               # OpenAPI 3.x / Swagger 2.0
-│   ├── JsonSchema/            # JSON Schema
-│   ├── GraphQL/               # GraphQL schemas
-│   └── Soap/                  # Legacy WSDL/SOAP
-│
-├── Models/                     # Integration-specific models
-│   ├── IntegrationSpec.cs     # Complete integration specification
-│   └── ApiEndpoint.cs         # API endpoint and parameter models
-│
-├── Patterns/                   # IMS pattern definitions
-│   └── ApiMappingPatterns.cs  # Domain-specific mapping patterns
-│
-├── Mapping/                    # CDM mapping engine
-│   └── CdmMapper.cs           # Maps external → CDM with IMS
-│
-├── CodeGen/                    # Integration code generation
-│   ├── DtoGenerator.cs        # External DTOs
-│   ├── MapperGenerator.cs     # AutoMapper profiles
-│   ├── ClientGenerator.cs     # Typed HTTP clients
-│   └── ValidatorGenerator.cs  # FluentValidation validators
-│
-├── Validation/                 # Integration validation
-│   └── SlaValidator.cs        # SLA compliance checking (!)
-│
-└── Analysis/                   # Change detection
-    ├── BreakingChangeDetector.cs
-    └── DriftDetector.cs
++-- Schemas/                    # External API schema parsing
+|   +-- OpenApiParser.cs        # OpenAPI 3.x parsing
+|   +-- ISchemaParser.cs        # Parser interface
+|   +-- SchemaParseResult.cs    # Parse result model
+|
++-- Models/                     # Integration-specific models
+|   +-- IntegrationSpec.cs      # Complete integration specification
+|   +-- ApiEndpoint.cs          # API endpoint and parameter models
+|   +-- ExternalSystemInfo.cs   # External system metadata
+|
++-- Patterns/                   # IMS pattern definitions
+|   +-- ApiMappingPatterns.cs   # Domain-specific mapping patterns
+|
++-- Mapping/                    # CDM mapping engine
+|   +-- CdmMapper.cs            # Maps external -> CDM with confidence
+|   +-- MappingResult.cs        # Mapping result with confidence report
+|   +-- EntityMapping.cs        # Entity-level mapping
+|   +-- FieldMapping.cs         # Field-level mapping
+|
++-- CodeGen/                    # Integration code generation
+|   +-- IntegrationCodeGenerator.cs  # Main code generator
+|
++-- Validation/                 # Integration validation
+    +-- SlaValidator.cs         # SLA compliance checking
 ```
 
 ---
@@ -115,7 +103,7 @@ Maps source field to target field:
 ### ApiMappingPatterns
 
 Pre-built patterns for common domains:
-- **Aviation**: tail_num → TailNumber, arr_time → ArrivalDateTime, pax → PassengerCount
+- **Aviation**: tail_num -> TailNumber, arr_time -> ArrivalDateTime, pax -> PassengerCount
 - **DateTime**: ISO/Unix timestamp conversions
 - **Identifiers**: Primary key, foreign key, correlation ID patterns
 - **Contact**: Email, phone, name patterns
@@ -123,33 +111,57 @@ Pre-built patterns for common domains:
 
 ---
 
-## CLI Commands (Planned)
+## CLI Commands
+
+### Analyze CDM Mapping
 
 ```bash
-# Generate integration scaffold from OpenAPI spec
-docflow integrate <spec.json> --cdm <path>
-  -o, --output <dir>           Output directory
-  -n, --namespace <name>       Namespace for generated code
-  --skip-client                Don't generate HTTP client
-  --interactive                Prompt for low-confidence mappings
+docflow integrate analyze <spec.json> --cdm <path> [options]
+  --cdm <path>           Path to CDM C# files (required)
+  --threshold <percent>  Filter by confidence threshold
+  -o, --output <file>    Save mapping report as JSON
+  -v, --verbose          Show field-level mappings
+```
 
-# Analyze mapping coverage
-docflow integrate analyze <spec.json> --cdm <path>
-  --report <file>              Output detailed report
+**Example:**
+```bash
+docflow integrate analyze petstore.json --cdm Models/Entities.cs --threshold 70 -v
+```
 
-# Validate against updated API spec
-docflow integrate validate <spec.json> --against <new-spec.json>
-  --breaking-only              Only show breaking changes
+### Validate SLA Compliance
 
-# Learn patterns from existing mappers
-docflow integrate learn <existing-mapper.cs>
-  --source-dto <dto.cs>
-  --target-cdm <cdm.cs>
+```bash
+docflow integrate sla <url> --expected <duration> [options]
+  --expected <duration>  Maximum acceptable data age (required)
+  --samples <count>      Number of samples (default: 10)
+  --interval <duration>  Time between samples (default: 5s)
+  --timestamp-path <path>  JSON path to timestamp field
+  --header <key=value>   Add HTTP header (repeatable)
+  -o, --output <file>    Save report as JSON
+  -v, --verbose          Show individual samples
+```
 
-# SLA compliance validation
-docflow integrate sla <endpoint-url> --expected <30s>
-  --samples 100                Number of samples
-  --report <file>              Output report
+**Duration formats:** `500ms`, `30s`, `5m`, `1h`
+
+**Example:**
+```bash
+docflow integrate sla https://api.example.com/data --expected 30s --samples 20
+```
+
+### Generate Integration Code
+
+```bash
+docflow integrate generate <spec.json> --cdm <path> --output <dir> [options]
+  --cdm <path>           Path to CDM C# files (required)
+  --output <dir>         Output directory (required)
+  --namespace <name>     Namespace (default: Integration.Generated)
+  --generate <types>     What to generate: dtos,mappers,client,validators (default: all)
+  -v, --verbose          Show generation details
+```
+
+**Example:**
+```bash
+docflow integrate generate petstore.json --cdm Models/ -o Generated/ -n MyApp.Integration
 ```
 
 ---
@@ -159,98 +171,131 @@ docflow integrate sla <endpoint-url> --expected <30s>
 ### 1. External DTOs
 
 ```csharp
-public sealed record FlightBridgeReservationDto
+public class PetDto
 {
-    [JsonPropertyName("res_id")]
-    public string? ResId { get; init; }
-    
-    [JsonPropertyName("arr_time")]
-    public string? ArrTime { get; init; }
-    // ...
+    [JsonPropertyName("id")]
+    public long Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "";
 }
 ```
 
 ### 2. AutoMapper Profiles
 
 ```csharp
-CreateMap<FlightBridgeReservationDto, Reservation>()
-    .ForMember(dest => dest.ReservationId, 
-        opt => opt.MapFrom(src => src.ResId))  // 98% confidence
-    .ForMember(dest => dest.ArrivalDateTime, 
-        opt => opt.MapFrom(src => ParseDateTime(src.ArrTime)));  // 95%
+// Pet -> Product (79% confidence)
+CreateMap<PetDto, Product>()
+    .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))  // 95% - Exact name match
+    .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name))  // 95% - Exact name match
+    .ForMember(d => d.Status, opt => opt.MapFrom(s => MapProductStatus(s.Status)))  // 95%
+    // TODO: Manual mapping required for Price (no source field)
+    .ForMember(d => d.Price, opt => opt.Ignore());
+
+private static ProductStatus MapProductStatus(string value) => value?.ToLowerInvariant() switch
+{
+    "available" => ProductStatus.Available,
+    "pending" => ProductStatus.Pending,
+    "sold" => ProductStatus.Sold,
+    _ => ProductStatus.Available
+};
 ```
 
 ### 3. Typed HTTP Clients
 
 ```csharp
-public interface IFlightBridgeClient
+public interface IPetstoreAPIClient
 {
-    Task<Reservation?> GetReservationAsync(string id, CancellationToken ct);
-    Task<FlightStatus?> GetFlightStatusAsync(string tailNumber, CancellationToken ct);
+    /// <summary>List all pets</summary>
+    Task<object?> GetPetsAsync(CancellationToken ct = default);
+
+    /// <summary>Create a pet</summary>
+    Task<PetDto?> PostPetsAsync(PetDto pet, CancellationToken ct = default);
+
+    /// <summary>Get a pet by ID</summary>
+    Task<PetDto?> GetPetsByIdAsync(long petId, CancellationToken ct = default);
 }
 ```
 
 ### 4. FluentValidation Validators
 
 ```csharp
-RuleFor(x => x.TailNum)
-    .Matches(@"^[A-Z0-9]{2,7}$")
-    .WithMessage("Invalid tail number format");
+public class PetDtoValidator : AbstractValidator<PetDto>
+{
+    public PetDtoValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(500);
+        RuleFor(x => x.Status).MaximumLength(500);
+    }
+}
 ```
+
+---
+
+## CDM Mapping Algorithm
+
+The `CdmMapper` uses a multi-pass field matching algorithm to ensure high-confidence matches are preferred:
+
+### Pass 1: Exact Name Match (95% confidence)
+Direct name equality (case-insensitive)
+
+### Pass 2: ID Field Match (85% confidence)
+Source ends with "Id" and target is "Id" or "{Entity}Id"
+
+### Pass 3: Contains Match (75% confidence)
+Target name contains source name or vice versa
+
+### Pass 4: Foreign Key Pattern (70% confidence)
+Source follows FK pattern (e.g., "petId" -> "ProductId")
+
+### Pass 5: Date/Time Match (70% confidence)
+Both fields are date/time types
+
+### Semantic Entity Matching
+Domain-specific mappings for common patterns:
+- Pet -> Product
+- Order -> Order
+- Category -> ProductCategory
+- Tag -> ProductCategory
 
 ---
 
 ## SLA Validation Feature
 
-Automated data freshness checking - would have caught the 1200 Aero issue!
+Automated data freshness checking:
 
 ```csharp
 var report = await slaValidator.ValidateDataFreshnessAsync(new SlaValidationRequest
 {
-    EndpointUrl = "https://api.1200aero.com/v1/flights/status/N12345",
+    EndpointUrl = "https://api.example.com/v1/flights/status/N12345",
     ExpectedMaxAge = TimeSpan.FromSeconds(30),
     SampleCount = 100,
     SampleInterval = TimeSpan.FromSeconds(5)
 });
-
-// Output:
-// 🚨 SLA Validation: SevereViolation
-// Expected Max Age: 00:00:30
-// Actual Average Age: 02:34:17  ← This is the problem!
-// Compliance: 0%
 ```
 
----
+### Compliance Verdicts
 
-## IMS Integration Learning
+| Verdict | Compliance Rate | Exit Code |
+|---------|-----------------|-----------|
+| COMPLIANT | 100% | 0 |
+| MARGINALLY COMPLIANT | 90-99% | 0 |
+| MINOR VIOLATION | 50-89% | 2 |
+| SEVERE VIOLATION | 0-49% | 2 |
 
-The IMS learns from:
-1. **Built-in patterns** - Domain-specific knowledge (aviation, etc.)
-2. **Existing integrations** - Analyze your manual mappers
-3. **User feedback** - Corrections improve future suggestions
+### Example Output
 
 ```
-docflow integrate learn ./src/Integrations/FlightBridge/Mapper.cs
-
-📚 Learning from example...
-   Extracted 23 new patterns
-   Updated confidence on 45 existing patterns
-   
-Next integration will have 94% auto-mapping accuracy!
+SLA Validation: COMPLIANT
+Expected Max Age: 30s
+Actual Average:   12.4s
+Min Age:          8.2s
+Max Age:          18.7s
+Compliance:       100% (10/10 samples)
 ```
-
----
-
-## Implementation Status
-
-Current project status:
-1. ✅ Core C# ↔ Mermaid pipeline (complete)
-2. ✅ Whiteboard scanning with Claude Vision (complete)
-3. ✅ Integration module scaffolded (types and interfaces)
-4. ⏳ Document pipeline (PDF/Word) - planned
-5. ⏳ Full Integration module implementation - planned
-
-The architecture is in place and ready for full implementation!
 
 ---
 
@@ -269,11 +314,42 @@ The architecture is in place and ready for full implementation!
 
 ---
 
-## Connection to OpenFlight CDM Work
+## Future Enhancements (Planned)
 
-This module directly applies the CDM architecture work from Signature Aviation:
-- Same canonical model principles
-- Same DDD patterns
-- Same integration challenges (FlightBridge, 1200 Aero, etc.)
+### IMS Pattern Learning
+The IMS will learn from:
+1. **Built-in patterns** - Domain-specific knowledge (aviation, etc.)
+2. **Existing integrations** - Analyze your manual mappers
+3. **User feedback** - Corrections improve future suggestions
 
-DocFlow.Integration is the tool that would have automated much of that integration work.
+```
+docflow integrate learn ./src/Integrations/FlightBridge/Mapper.cs
+
+Learning from example...
+   Extracted 23 new patterns
+   Updated confidence on 45 existing patterns
+
+Next integration will have 94% auto-mapping accuracy!
+```
+
+### Additional Schema Support
+- GraphQL schema parsing
+- JSON Schema support
+- Swagger 2.0 support
+
+### Breaking Change Detection
+```bash
+docflow integrate validate <spec.json> --against <new-spec.json>
+  --breaking-only              Only show breaking changes
+```
+
+---
+
+## Sample Files
+
+The `samples/integration-demos/` directory contains:
+- `petstore.json` - Sample OpenAPI specification
+- `SampleCdm/Entities.cs` - Sample CDM entities
+- `sla-test-guide.md` - Guide for testing SLA validation
+
+See [samples/integration-demos/README.md](../../samples/integration-demos/README.md) for usage examples.
