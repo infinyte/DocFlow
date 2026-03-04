@@ -376,7 +376,7 @@ public class Program
                     PrintModelSummary(model, verbose);
 
                     AnsiConsole.WriteLine();
-                    var panel = new Panel(generateResult.Content!)
+                    var panel = new Panel(Markup.Escape(generateResult.Content!))
                     {
                         Header = new PanelHeader("[green]Generated C# Code[/]"),
                         Border = BoxBorder.Rounded,

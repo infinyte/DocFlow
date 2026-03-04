@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DocFlow — Intelligent Documentation & Modeling Toolkit</title>
+  <meta name="description" content="Transform whiteboard sketches into working code. Generate diagrams from C# source. Map external APIs to your domain model." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Design Tokens ─────────────────────────────────────────── */
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface-2: #21262d;
+      --border:    #30363d;
+      --text:      #c9d1d9;
+      --muted:     #8b949e;
+      --green:     #3fb950;
+      --blue:      #58a6ff;
+      --yellow:    #e3b341;
+      --red:       #f85149;
+      --orange:    #db6d28;
+      --radius:    8px;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    /* ─── Reset & Base ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    pre, code { font-family: var(--font-mono); }
+
+    /* ─── Layout Helpers ────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 80px 0; }
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #e6edf3;
+    }
+    .section-subtitle {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin-bottom: 48px;
+    }
+
+    /* ─── Navigation ────────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #e6edf3;
+      text-decoration: none;
+    }
+    .nav-logo-glyph {
+      font-family: var(--font-mono);
+      color: var(--green);
+      font-size: 1.3rem;
+      letter-spacing: -2px;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .nav-links .btn-nav {
+      background: var(--green);
+      color: #0d1117;
+      padding: 6px 16px;
+      border-radius: var(--radius);
+      font-weight: 600;
+    }
+    .nav-links .btn-nav:hover { background: #56d364; }
+
+    /* ─── Hero ──────────────────────────────────────────────────── */
+    #hero {
+      padding: 80px 0 60px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .ascii-logo {
+      font-family: var(--font-mono);
+      font-size: clamp(0.55rem, 1.4vw, 0.95rem);
+      line-height: 1.35;
+      color: var(--green);
+      display: inline-block;
+      margin-bottom: 40px;
+      text-align: left;
+      white-space: pre;
+    }
+    .hero-headline {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      color: #e6edf3;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .hero-sub {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto 40px;
+    }
+    .hero-ctas {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 56px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: none;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--green); color: #0d1117; }
+    .btn-primary:hover { background: #56d364; text-decoration: none; }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--muted); text-decoration: none; }
+
+    /* Hero terminal */
+    .hero-terminal {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      text-align: left;
+    }
+    .term-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #f85149; }
+    .dot-y { background: #e3b341; }
+    .dot-g { background: #3fb950; }
+    .term-title {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-left: 8px;
+    }
+    .term-body {
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      min-height: 160px;
+    }
+    .term-prompt { color: var(--green); }
+    .term-cmd { color: var(--text); }
+    .term-output { color: var(--muted); display: block; margin-top: 4px; }
+    .term-cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--green);
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ─── Features ──────────────────────────────────────────────── */
+    #features { border-bottom: 1px solid var(--border); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      transition: border-color 0.15s;
+    }
+    .feature-card:hover { border-color: var(--blue); }
+    .feature-icon {
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+      display: block;
+      font-family: var(--font-mono);
+      color: var(--blue);
+    }
+    .feature-card h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #e6edf3;
+      margin-bottom: 10px;
+    }
+    .feature-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+    /* ─── Demos ─────────────────────────────────────────────────── */
+    #demos { border-bottom: 1px solid var(--border); }
+    .demo-section { margin-bottom: 72px; }
+    .demo-section:last-child { margin-bottom: 0; }
+    .demo-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--green);
+      background: rgba(63,185,80,0.1);
+      border: 1px solid rgba(63,185,80,0.25);
+      padding: 3px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .demo-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #e6edf3;
+      margin-bottom: 8px;
+    }
+    .demo-desc { color: var(--muted); margin-bottom: 28px; font-size: 0.95rem; }
+    .demo-two-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 700px) {
+      .demo-two-panel { grid-template-columns: 1fr; }
+    }
+
+    /* Whiteboard placeholder */
+    .whiteboard-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .wb-label {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .wb-ascii {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--yellow);
+      white-space: pre;
+      line-height: 1.4;
+    }
+
+    /* Terminal panels */
+    .term-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .term-panel .term-body {
+      overflow-x: auto;
+    }
+    .c-green  { color: var(--green); }
+    .c-blue   { color: var(--blue); }
+    .c-yellow { color: var(--yellow); }
+    .c-red    { color: var(--red); }
+    .c-orange { color: var(--orange); }
+    .c-muted  { color: var(--muted); }
+    .c-text   { color: var(--text); }
+
+    /* Demo 2 tabs */
+    .demo-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .demo-tab {
+      padding: 10px 20px;
+      font-family: var(--font-mono);
+      font-size: 0.83rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s;
+    }
+    .demo-tab:hover { color: var(--text); }
+    .demo-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 700px) {
+      .tab-pane.active { grid-template-columns: 1fr; }
+    }
+
+    /* Code block with label */
+    .code-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .code-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .code-panel pre {
+      padding: 16px 20px;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+
+    /* Full width terminal */
+    .term-full {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .term-full .term-body {
+      overflow-x: auto;
+    }
+
+    /* ─── Architecture ──────────────────────────────────────────── */
+    #architecture { border-bottom: 1px solid var(--border); }
+    .arch-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    @media (max-width: 700px) {
+      .arch-grid { grid-template-columns: 1fr; }
+    }
+    .arch-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.8;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .arch-points { list-style: none; display: flex; flex-direction: column; gap: 20px; }
+    .arch-point {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .arch-icon {
+      font-family: var(--font-mono);
+      color: var(--blue);
+      font-size: 1rem;
+      min-width: 28px;
+      margin-top: 2px;
+    }
+    .arch-point h4 { font-size: 0.95rem; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+    .arch-point p  { font-size: 0.88rem; color: var(--muted); }
+
+    /* ─── Install ───────────────────────────────────────────────── */
+    #install { border-bottom: 1px solid var(--border); }
+    .install-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .install-tab {
+      padding: 10px 20px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s;
+    }
+    .install-tab:hover { color: var(--text); }
+    .install-tab.active { color: var(--green); border-bottom-color: var(--green); }
+    .install-pane { display: none; }
+    .install-pane.active { display: block; }
+    .install-block {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .install-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .install-block pre {
+      padding: 16px 20px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text);
+      overflow-x: auto;
+    }
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { border-color: var(--green); color: var(--green); }
+    .copy-btn.copied { border-color: var(--green); color: var(--green); }
+    .install-note { font-size: 0.85rem; color: var(--muted); }
+    .install-note code {
+      background: var(--surface-2);
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.82rem;
+      color: var(--yellow);
+    }
+
+    /* ─── Docs Links ────────────────────────────────────────────── */
+    #docs { border-bottom: 1px solid var(--border); }
+    .docs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .docs-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      transition: border-color 0.15s;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .docs-card:hover { border-color: var(--blue); text-decoration: none; }
+    .docs-card-icon { font-family: var(--font-mono); color: var(--blue); font-size: 1.3rem; }
+    .docs-card h3 { font-size: 1rem; font-weight: 600; color: #e6edf3; }
+    .docs-card p  { font-size: 0.85rem; color: var(--muted); }
+
+    /* ─── Footer ────────────────────────────────────────────────── */
+    footer {
+      padding: 32px 0;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+    .footer-sep { margin: 0 10px; opacity: 0.4; }
+
+    /* ─── Badges ────────────────────────────────────────────────── */
+    .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; justify-content: center; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      border: 1px solid;
+    }
+    .badge-blue   { color: var(--blue);   border-color: rgba(88,166,255,0.3);  background: rgba(88,166,255,0.07); }
+    .badge-green  { color: var(--green);  border-color: rgba(63,185,80,0.3);   background: rgba(63,185,80,0.07); }
+
+    /* ─── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .section { padding: 56px 0; }
+      .nav-links li:not(:last-child) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">
+      <span class="nav-logo-glyph">&gt;_</span>
+      DocFlow
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#demos">Demos</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#docs">Docs</a></li>
+      <li><a href="https://github.com/infinyte/docflow" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="#install" class="btn-nav">Install</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="container">
+    <pre class="ascii-logo">  ____                   _____   _
+ |  _ \    ___     ___  |  ___| | |   ___   __      __
+ | | | |  / _ \   / __| | |_    | |  / _ \  \ \ /\ / /
+ | |_| | | (_) | | (__  |  _|   | | | (_) |  \ V  V /
+ |____/   \___/   \___| |_|     |_|  \___/    \_/\_/</pre>
+
+    <div class="badges">
+      <span class="badge badge-blue">.NET 8.0</span>
+      <span class="badge badge-green">72 tests passing</span>
+      <span class="badge badge-green">MIT License</span>
+      <span class="badge badge-blue">v0.1.0-preview</span>
+    </div>
+
+    <h1 class="hero-headline">Transform Diagrams.<br>Generate Code. Ship Faster.</h1>
+    <p class="hero-sub">DocFlow is an intelligent documentation and modeling toolkit. Snap a whiteboard photo, map OpenAPI specs to your domain model, and keep your diagrams in sync with your code — automatically.</p>
+
+    <div class="hero-ctas">
+      <a href="#install" class="btn btn-primary">&#8595; Get Started</a>
+      <a href="https://github.com/infinyte/docflow" target="_blank" rel="noopener" class="btn btn-secondary">
+        <svg height="16" viewBox="0 0 16 16" width="16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+
+    <!-- Animated terminal -->
+    <div class="hero-terminal">
+      <div class="term-bar">
+        <span class="dot dot-r"></span>
+        <span class="dot dot-y"></span>
+        <span class="dot dot-g"></span>
+        <span class="term-title">bash — DocFlow CLI</span>
+      </div>
+      <div class="term-body" id="hero-term">
+        <span class="term-prompt">$ </span><span class="term-cmd" id="hero-cmd"></span><span class="term-cursor" id="hero-cursor"></span>
+        <span class="term-output" id="hero-output"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ───────────────────────────────────────────────── -->
+<section id="features" class="section">
+  <div class="container">
+    <h2 class="section-title">Everything you need to keep docs and code in sync</h2>
+    <p class="section-subtitle">Four core capabilities, one unified toolkit.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">📷</span>
+        <h3>Whiteboard → Code</h3>
+        <p>Snap a photo of your whiteboard sketch. Claude Vision extracts the diagram structure, and DocFlow's code generator produces idiomatic C# — records, entities, and all.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⇄</span>
+        <h3>Bidirectional Transform</h3>
+        <p>Parse C# to Mermaid class diagrams, or generate C# from Mermaid. Full DDD semantic preservation — aggregates, value objects, and relationships survive the round-trip.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔌</span>
+        <h3>API Integration</h3>
+        <p>Parse OpenAPI 3.x specifications, map fields to your Canonical Domain Model with confidence scoring, and generate typed DTOs, AutoMapper profiles, and HTTP clients.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">✓</span>
+        <h3>SLA Validation</h3>
+        <p>Validate data freshness against SLA thresholds. Sample live endpoints, compare timestamps against expected durations, and get clear compliance verdicts.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Demos ───────────────────────────────────────────────────── -->
+<section id="demos" class="section">
+  <div class="container">
+    <h2 class="section-title">See it in action</h2>
+    <p class="section-subtitle">Real terminal output from DocFlow commands.</p>
+
+    <!-- Demo 1: Whiteboard Scanner -->
+    <div class="demo-section">
+      <div class="demo-label">Demo 01</div>
+      <div class="demo-title">Whiteboard → C# Code</div>
+      <p class="demo-desc">Point DocFlow at a whiteboard photo. Claude Vision reads the sketch, extracts entities and relationships, and generates a full C# domain model.</p>
+      <div class="demo-two-panel">
+        <!-- Left: whiteboard placeholder -->
+        <div class="whiteboard-box">
+          <div class="wb-label">[ whiteboard.jpg — input photo ]</div>
+          <div class="wb-ascii">┌──────────────────┐
+│  &lt;&lt;AggregateRoot&gt;&gt; │
+│     Order         │
+├──────────────────┤
+│ + Id : Guid      │
+│ + CustomerId     │
+│ + Items[]        │
+│ + TotalAmount    │
+└────────┬─────────┘
+         │ contains
+         ▼
+┌──────────────────┐
+│  &lt;&lt;Entity&gt;&gt;      │
+│   OrderItem       │
+├──────────────────┤
+│ + ProductId      │
+│ + Quantity       │
+│ + UnitPrice      │
+└──────────────────┘</div>
+        </div>
+        <!-- Right: terminal output -->
+        <div class="term-panel">
+          <div class="term-bar">
+            <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+            <span class="term-title">bash</span>
+          </div>
+          <div class="term-body" style="font-size:0.78rem">
+<span class="c-green">$</span> <span class="c-text">docflow scan whiteboard.jpg -o domain.mmd -v</span>
+<br><br>
+<span class="c-blue">◆ DocFlow Whiteboard Scanner</span>
+<br>
+<span class="c-muted">  Analyzing image with Claude Vision...</span>
+<br><br>
+<span class="c-green">✓ Diagram type detected:</span> <span class="c-yellow">Class Diagram</span>
+<span class="c-green">✓ Confidence:</span>             <span class="c-text">94%</span>
+<span class="c-green">✓ Entities found:</span>         <span class="c-text">2</span>
+<span class="c-green">✓ Relationships:</span>          <span class="c-text">1 (Composition)</span>
+<br><br>
+<span class="c-blue">Entities</span>
+<span class="c-muted">─────────────────────────────────────</span>
+<span class="c-green">Order</span>        <span class="c-yellow">&lt;&lt;AggregateRoot&gt;&gt;</span>   <span class="c-text">4 props</span>
+<span class="c-green">OrderItem</span>    <span class="c-yellow">&lt;&lt;Entity&gt;&gt;</span>          <span class="c-text">3 props</span>
+<br><br>
+<span class="c-blue">Generated Mermaid (domain.mmd)</span>
+<span class="c-muted">classDiagram
+  class Order {
+    +Guid Id
+    +Guid CustomerId
+    +OrderItem[] Items
+    +decimal TotalAmount
+  }
+  Order *-- OrderItem</span>
+<br><br>
+<span class="c-green">✓ Saved to domain.mmd</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo 2: C# ↔ Mermaid -->
+    <div class="demo-section">
+      <div class="demo-label">Demo 02</div>
+      <div class="demo-title">C# ↔ Mermaid Bidirectional Transform</div>
+      <p class="demo-desc">Parse existing C# source into Mermaid, or generate C# records and entities from a diagram — with full DDD pattern preservation.</p>
+
+      <div class="demo-tabs">
+        <button class="demo-tab active" data-tab="cs-to-mmd">C# → Mermaid</button>
+        <button class="demo-tab" data-tab="mmd-to-cs">Mermaid → C#</button>
+      </div>
+
+      <!-- C# → Mermaid -->
+      <div id="cs-to-mmd" class="tab-pane active">
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span>Domain.cs — input</span>
+            <span style="color:var(--blue)">C#</span>
+          </div>
+          <pre><span class="c-blue">public</span> <span class="c-blue">class</span> <span class="c-yellow">Order</span>
+{
+    <span class="c-blue">public</span> Guid Id { <span class="c-blue">get</span>; <span class="c-blue">init</span>; }
+    <span class="c-blue">public</span> Guid CustomerId { <span class="c-blue">get</span>; <span class="c-blue">set</span>; }
+    <span class="c-blue">public</span> List&lt;OrderItem&gt; Items { <span class="c-blue">get</span>; } = [];
+    <span class="c-blue">public</span> <span class="c-blue">decimal</span> TotalAmount { <span class="c-blue">get</span>; <span class="c-blue">set</span>; }
+}
+
+<span class="c-blue">public record</span> <span class="c-yellow">OrderItem</span>(
+    Guid ProductId,
+    <span class="c-blue">int</span> Quantity,
+    <span class="c-blue">decimal</span> UnitPrice
+);</pre>
+        </div>
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span>domain.mmd — output</span>
+            <span style="color:var(--green)">Mermaid</span>
+          </div>
+          <pre><span class="c-muted">classDiagram</span>
+  <span class="c-blue">class</span> <span class="c-yellow">Order</span> {
+    <span class="c-green">+Guid</span> Id
+    <span class="c-green">+Guid</span> CustomerId
+    <span class="c-green">+List~OrderItem~</span> Items
+    <span class="c-green">+decimal</span> TotalAmount
+  }
+  <span class="c-blue">class</span> <span class="c-yellow">OrderItem</span> {
+    <span class="c-green">+Guid</span> ProductId
+    <span class="c-green">+int</span> Quantity
+    <span class="c-green">+decimal</span> UnitPrice
+  }
+  Order <span class="c-orange">*--</span> OrderItem</pre>
+        </div>
+      </div>
+
+      <!-- Mermaid → C# -->
+      <div id="mmd-to-cs" class="tab-pane">
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span>design.mmd — input</span>
+            <span style="color:var(--green)">Mermaid</span>
+          </div>
+          <pre><span class="c-muted">classDiagram</span>
+  <span class="c-blue">class</span> <span class="c-yellow">Customer</span> {
+    <span class="c-muted">&lt;&lt;AggregateRoot&gt;&gt;</span>
+    <span class="c-green">+Guid</span> Id
+    <span class="c-green">+string</span> Name
+    <span class="c-green">+Email</span> EmailAddress
+  }
+  <span class="c-blue">class</span> <span class="c-yellow">Email</span> {
+    <span class="c-muted">&lt;&lt;ValueObject&gt;&gt;</span>
+    <span class="c-green">+string</span> Value
+  }
+  Customer <span class="c-orange">*--</span> Email</pre>
+        </div>
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span>Customer.cs — generated</span>
+            <span style="color:var(--blue)">C#</span>
+          </div>
+          <pre><span class="c-muted">/// &lt;summary&gt;Customer aggregate root.&lt;/summary&gt;</span>
+<span class="c-blue">public class</span> <span class="c-yellow">Customer</span>
+{
+    <span class="c-blue">public required</span> Guid Id { <span class="c-blue">get</span>; <span class="c-blue">init</span>; }
+    <span class="c-blue">public required string</span> Name { <span class="c-blue">get</span>; <span class="c-blue">set</span>; }
+    <span class="c-blue">public required</span> Email EmailAddress
+        { <span class="c-blue">get</span>; <span class="c-blue">set</span>; }
+}
+
+<span class="c-muted">/// &lt;summary&gt;Email value object.&lt;/summary&gt;</span>
+<span class="c-blue">public record</span> <span class="c-yellow">Email</span>(
+    <span class="c-blue">string</span> Value
+);</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo 3: Integration Module -->
+    <div class="demo-section">
+      <div class="demo-label">Demo 03</div>
+      <div class="demo-title">OpenAPI → CDM Integration</div>
+      <p class="demo-desc">Parse an OpenAPI spec, map its fields to your Canonical Domain Model, and generate production-ready integration code — all in two commands.</p>
+      <div class="term-full">
+        <div class="term-bar">
+          <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+          <span class="term-title">bash — Integration Module</span>
+        </div>
+        <div class="term-body" style="font-size:0.78rem; line-height:1.7">
+<span class="c-green">$</span> <span class="c-text">docflow integrate analyze petstore.json --cdm Models/ --threshold 70</span>
+<br><br>
+<span class="c-blue">◆ CDM Mapping Analysis</span>
+<span class="c-muted">  Spec:  petstore.json (Petstore API v1.0.0)</span>
+<span class="c-muted">  CDM:   Models/ (8 entities)</span>
+<span class="c-muted">  Found: 3 external entities → 3 CDM matches</span>
+<br><br>
+<span class="c-blue">Entity Mappings</span>
+<span class="c-muted">─────────────────────────────────────────────────────────────────────</span>
+<span class="c-text"> External Entity      CDM Entity         Confidence  Fields</span>
+<span class="c-muted">─────────────────────────────────────────────────────────────────────</span>
+<span class="c-green"> Pet              →  Animal             97%         5/5 matched</span>
+<span class="c-green"> Order            →  PurchaseOrder      88%         4/5 matched</span>
+<span class="c-yellow"> User             →  Customer           71%         3/5 matched  ⚠ review</span>
+<span class="c-muted">─────────────────────────────────────────────────────────────────────</span>
+<br>
+<span class="c-green">$</span> <span class="c-text">docflow integrate generate petstore.json --cdm Models/ -o Generated/ -n Petstore.Integration</span>
+<br><br>
+<span class="c-blue">◆ Code Generation</span>
+<br>
+<span class="c-green">✓</span> <span class="c-text">Generated/Dtos/PetDto.cs</span>             <span class="c-muted">(external DTO)</span>
+<span class="c-green">✓</span> <span class="c-text">Generated/Dtos/OrderDto.cs</span>            <span class="c-muted">(external DTO)</span>
+<span class="c-green">✓</span> <span class="c-text">Generated/Dtos/UserDto.cs</span>             <span class="c-muted">(external DTO)</span>
+<span class="c-green">✓</span> <span class="c-text">Generated/Mapping/PetstoreProfile.cs</span>  <span class="c-muted">(AutoMapper profile)</span>
+<span class="c-green">✓</span> <span class="c-text">Generated/Clients/IPetstoreClient.cs</span>  <span class="c-muted">(typed HTTP client)</span>
+<span class="c-green">✓</span> <span class="c-text">Generated/Validators/PetValidator.cs</span>  <span class="c-muted">(FluentValidation)</span>
+<br>
+<span class="c-yellow">⚠</span> <span class="c-text">Generated/Mapping/PetstoreProfile.cs:42</span>  <span class="c-yellow">// TODO: verify User→Customer mapping (71%)</span>
+<br>
+<span class="c-green">✓ 6 files generated in 340ms</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Architecture ────────────────────────────────────────────── -->
+<section id="architecture" class="section">
+  <div class="container">
+    <h2 class="section-title">How it works</h2>
+    <p class="section-subtitle">Everything flows through a Canonical Semantic Model.</p>
+    <div class="arch-grid">
+      <div class="arch-diagram"><span class="c-muted">         Source Formats
+    ┌────────┬────────┬────────┐
+    │  C#    │Mermaid │OpenAPI │
+    └───┬────┴───┬────┴───┬────┘
+        │        │        │
+        ▼        ▼        ▼
+    ┌──────────────────────────┐
+    │    IModelParser          │
+    │  (format-specific)       │
+    └────────────┬─────────────┘
+                 │
+                 ▼
+    ┌──────────────────────────┐
+    │   <span class="c-green">SemanticModel</span>            │
+    │  entities · relations    │
+    │  DDD stereotypes         │
+    └────────────┬─────────────┘
+                 │
+    ┌────────────▼─────────────┐
+    │    IModelGenerator       │
+    │  (format-specific)       │
+    └───┬────┬────┬────┬───────┘
+        │    │    │    │
+        ▼    ▼    ▼    ▼
+       C#  Mmd  DTO  Client
+         Target Formats</span>
+      </div>
+      <ul class="arch-points">
+        <li class="arch-point">
+          <span class="arch-icon">01</span>
+          <div>
+            <h4>Parse to Semantic Model</h4>
+            <p>Format-specific parsers (Roslyn for C#, custom for Mermaid, OpenAPI spec reader) convert source into a language-neutral semantic model capturing entities, relationships, and DDD patterns.</p>
+          </div>
+        </li>
+        <li class="arch-point">
+          <span class="arch-icon">02</span>
+          <div>
+            <h4>Enrich with Intelligence</h4>
+            <p>The IMS layer applies pattern recognition, CDM mapping, and confidence scoring. Claude Vision adds AI-powered diagram extraction from photos.</p>
+          </div>
+        </li>
+        <li class="arch-point">
+          <span class="arch-icon">03</span>
+          <div>
+            <h4>Generate to Target</h4>
+            <p>Generators produce idiomatic output: nullable-enabled C# 12, valid Mermaid syntax, AutoMapper profiles, FluentValidation validators, or typed HTTP clients.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── Install ─────────────────────────────────────────────────── -->
+<section id="install" class="section">
+  <div class="container">
+    <h2 class="section-title">Install DocFlow</h2>
+    <p class="section-subtitle">One command to get started on any platform.</p>
+
+    <div class="install-tabs">
+      <button class="install-tab active" data-itab="linux">Linux / macOS</button>
+      <button class="install-tab" data-itab="windows">Windows</button>
+      <button class="install-tab" data-itab="source">From Source</button>
+    </div>
+
+    <div id="linux" class="install-pane active">
+      <div class="install-block">
+        <div class="install-block-header">
+          <span>bash</span>
+          <button class="copy-btn" data-copy="curl -sSL https://raw.githubusercontent.com/infinyte/docflow/main/install.sh | bash">copy</button>
+        </div>
+        <pre>curl -sSL https://raw.githubusercontent.com/infinyte/docflow/main/install.sh | bash</pre>
+      </div>
+      <p class="install-note">Requires <code>.NET 8 SDK</code>. The script installs to <code>~/.dotnet/tools</code> and adds it to your PATH.</p>
+    </div>
+
+    <div id="windows" class="install-pane">
+      <div class="install-block">
+        <div class="install-block-header">
+          <span>powershell</span>
+          <button class="copy-btn" data-copy="irm https://raw.githubusercontent.com/infinyte/docflow/main/install.ps1 | iex">copy</button>
+        </div>
+        <pre>irm https://raw.githubusercontent.com/infinyte/docflow/main/install.ps1 | iex</pre>
+      </div>
+      <p class="install-note">Run in an <code>Administrator</code> PowerShell session. Requires <code>.NET 8 SDK</code>.</p>
+    </div>
+
+    <div id="source" class="install-pane">
+      <div class="install-block">
+        <div class="install-block-header">
+          <span>bash</span>
+          <button class="copy-btn" data-copy="git clone https://github.com/infinyte/docflow.git
+cd docflow
+dotnet build
+dotnet run --project src/DocFlow.CLI -- --help">copy</button>
+        </div>
+        <pre>git clone https://github.com/infinyte/docflow.git
+cd docflow
+dotnet build
+dotnet run --project src/DocFlow.CLI -- --help</pre>
+      </div>
+      <p class="install-note">Set <code>ANTHROPIC_API_KEY</code> in your environment to enable whiteboard scanning.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Docs Links ──────────────────────────────────────────────── -->
+<section id="docs" class="section">
+  <div class="container">
+    <h2 class="section-title">Documentation</h2>
+    <p class="section-subtitle">Everything you need to go deeper.</p>
+    <div class="docs-grid">
+      <a class="docs-card" href="https://github.com/infinyte/docflow/blob/main/docs/CLI-REFERENCE.md" target="_blank" rel="noopener">
+        <span class="docs-card-icon">$_</span>
+        <h3>CLI Reference</h3>
+        <p>Complete reference for all commands, flags, and options. Diagram, codegen, scan, integrate.</p>
+      </a>
+      <a class="docs-card" href="https://github.com/infinyte/docflow/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener">
+        <span class="docs-card-icon">◈</span>
+        <h3>Architecture</h3>
+        <p>Deep dive into the canonical semantic model, parser/generator pattern, and DDD classification system.</p>
+      </a>
+      <a class="docs-card" href="https://github.com/infinyte/docflow/blob/main/docs/CHANGELOG.md" target="_blank" rel="noopener">
+        <span class="docs-card-icon">◎</span>
+        <h3>Changelog</h3>
+        <p>Version history, breaking changes, and what's coming in the roadmap for DocFlow v0.2.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <p>
+      MIT License
+      <span class="footer-sep">·</span>
+      <a href="https://github.com/infinyte/docflow" target="_blank" rel="noopener">GitHub</a>
+      <span class="footer-sep">·</span>
+      Built by Kurt Mitchell with Claude
+    </p>
+  </div>
+</footer>
+
+<!-- ── JavaScript ─────────────────────────────────────────────── -->
+<script>
+  /* ── Hero terminal typing animation ── */
+  const COMMANDS = [
+    {
+      cmd: 'docflow diagram Domain.cs -o domain.mmd',
+      out: '✓ Parsed 3 entities  ·  Wrote domain.mmd'
+    },
+    {
+      cmd: 'docflow scan whiteboard.jpg -o extracted.mmd',
+      out: '✓ Detected: Class Diagram (94%)  ·  2 entities extracted'
+    },
+    {
+      cmd: 'docflow integrate generate petstore.json --cdm Models/ -o Generated/',
+      out: '✓ 6 files generated in 340ms'
+    }
+  ];
+
+  let cmdIdx = 0;
+  let charIdx = 0;
+  let phase = 'typing'; // typing | showing | erasing | pause
+
+  const cmdEl    = document.getElementById('hero-cmd');
+  const outputEl = document.getElementById('hero-output');
+  const cursorEl = document.getElementById('hero-cursor');
+
+  function tick() {
+    const { cmd, out } = COMMANDS[cmdIdx];
+
+    if (phase === 'typing') {
+      if (charIdx <= cmd.length) {
+        cmdEl.textContent = cmd.slice(0, charIdx);
+        charIdx++;
+        setTimeout(tick, 38);
+      } else {
+        phase = 'showing';
+        outputEl.textContent = out;
+        setTimeout(tick, 1800);
+      }
+    } else if (phase === 'showing') {
+      phase = 'erasing';
+      setTimeout(tick, 60);
+    } else if (phase === 'erasing') {
+      if (charIdx > 0) {
+        charIdx--;
+        cmdEl.textContent = cmd.slice(0, charIdx);
+        setTimeout(tick, 18);
+      } else {
+        outputEl.textContent = '';
+        phase = 'pause';
+        cmdIdx = (cmdIdx + 1) % COMMANDS.length;
+        setTimeout(tick, 500);
+      }
+    } else if (phase === 'pause') {
+      phase = 'typing';
+      charIdx = 0;
+      setTimeout(tick, 100);
+    }
+  }
+  setTimeout(tick, 800);
+
+  /* ── Demo 2 tabs ── */
+  document.querySelectorAll('.demo-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      btn.closest('.demo-section').querySelectorAll('.demo-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      btn.closest('.demo-section').querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.getElementById(target).classList.add('active');
+    });
+  });
+
+  /* ── Install tabs ── */
+  document.querySelectorAll('.install-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.itab;
+      document.querySelectorAll('.install-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.install-pane').forEach(p => p.classList.remove('active'));
+      document.getElementById(target).classList.add('active');
+    });
+  });
+
+  /* ── Copy to clipboard ── */
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = btn.dataset.copy;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1800);
+      } catch {
+        btn.textContent = 'error';
+        setTimeout(() => { btn.textContent = 'copy'; }, 1800);
+      }
+    });
+  });
+</script>
+</body>
+</html>

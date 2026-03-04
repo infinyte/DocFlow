@@ -59,7 +59,7 @@ public sealed class IntegrationSpec
 
 public sealed class ExternalSystemInfo
 {
-    /// <summary>External system name (e.g., "FlightBridge", "1200Aero")</summary>
+    /// <summary>External system name (e.g., "PetStore", "ExternalApi")</summary>
     public required string Name { get; init; }
     
     /// <summary>Base URL for API calls</summary>

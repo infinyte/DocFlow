@@ -18,7 +18,7 @@ DocFlow is an intelligent documentation and modeling toolkit. Current implementa
 | Document Pipeline | Planned | PDF/Word conversion |
 
 **Solution Stats:**
-- 12 projects compiling
+- 13 projects compiling (11 source + 2 test)
 - 72 tests passing (20 CodeAnalysis + 52 Diagrams)
 
 ## Build and Test Commands
@@ -62,7 +62,10 @@ docflow scan <image> [-o output.mmd] [-c context] [-v]
 ### Integration Commands
 
 ```bash
-# Analyze CDM mapping with confidence scores (parses OpenAPI spec automatically)
+# Parse OpenAPI spec and display entities/endpoints
+docflow integrate parse <spec.json> [-v]
+
+# Analyze CDM mapping with confidence scores
 docflow integrate analyze <spec.json> --cdm <path> [--threshold 70] [-v]
 
 # Validate SLA data freshness
@@ -179,7 +182,6 @@ Complete implementation extending the canonical model to API integrations:
 - Multi-pass field matching (exact, ID, contains, FK pattern, datetime)
 - Semantic entity matching for domain concepts
 - Confidence scoring with reasoning
-- Pre-built patterns for aviation domain
 
 **SLA Validation** (`Validation/SlaValidator.cs`):
 - Data freshness validation
@@ -205,7 +207,7 @@ See `docs/design/integration-module.md` for full design.
 
 ## Testing
 
-91 unit tests covering:
+72 unit tests covering:
 - C# parsing accuracy (class, record, interface, enum)
 - Mermaid generation correctness
 - Round-trip semantic preservation

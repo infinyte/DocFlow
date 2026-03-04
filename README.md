@@ -15,7 +15,7 @@ Transform whiteboard sketches into working code. Generate diagrams from source f
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![Tests](https://img.shields.io/badge/tests-91%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-72%20passing-brightgreen)]()
 
 ---
 
@@ -225,7 +225,6 @@ DocFlow/
 +-- tests/
 |   +-- DocFlow.CodeAnalysis.Tests  # 20 tests
 |   +-- DocFlow.Diagrams.Tests      # 52 tests
-|   +-- DocFlow.CodeGen.Tests       # 19 tests
 +-- docs/
 |   +-- ARCHITECTURE.md        # Technical architecture
 |   +-- CLI-REFERENCE.md       # Complete CLI documentation
@@ -287,13 +286,12 @@ See [docs/design/integration-module.md](docs/design/integration-module.md) for f
 # Build
 dotnet build
 
-# Run all tests (91 tests)
+# Run all tests (72 tests)
 dotnet test
 
 # Run specific test project
 dotnet test tests/DocFlow.CodeAnalysis.Tests
 dotnet test tests/DocFlow.Diagrams.Tests
-dotnet test tests/DocFlow.CodeGen.Tests
 
 # Run CLI locally
 dotnet run --project src/DocFlow.CLI -- diagram MyClass.cs
@@ -301,7 +299,7 @@ dotnet run --project src/DocFlow.CLI -- diagram MyClass.cs
 
 ### Test Coverage
 
-- **91 unit tests** across 3 test projects
+- **72 unit tests** across 2 test projects (20 CodeAnalysis + 52 Diagrams)
 - C# parsing accuracy (classes, records, interfaces, enums)
 - Mermaid generation correctness
 - Round-trip semantic preservation

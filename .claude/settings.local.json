@@ -32,7 +32,10 @@
       "Bash(mkdir:*)",
       "Bash(/root/.dotnet/dotnet clean:*)",
       "Bash(lsof:*)",
-      "Bash(/root/.dotnet/dotnet sln:*)"
+      "Bash(/root/.dotnet/dotnet sln:*)",
+      "Bash(./docflow-dev.sh:*)",
+      "Bash(rm:*)",
+      "Bash(grep:*)"
     ]
   }
 }

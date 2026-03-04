@@ -265,7 +265,47 @@ The scan command requires a Claude API key. Configure using one of:
 
 ### integrate
 
-API integration commands for CDM mapping, SLA validation, and code generation.
+API integration commands for parsing OpenAPI specs, CDM mapping, SLA validation, and code generation.
+
+#### integrate parse
+
+Parse an OpenAPI specification and display a summary of its entities and endpoints.
+
+**Usage:**
+```bash
+docflow integrate parse <spec> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `<spec>` | OpenAPI specification file (JSON or YAML) |
+
+**Options:**
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--verbose` | `-v` | Show property-level details for each entity |
+
+**Examples:**
+
+```bash
+# Show summary
+docflow integrate parse petstore.json
+
+# Show entity property details
+docflow integrate parse api.json -v
+```
+
+**Output:**
+
+- API name and version
+- Entity table (name, property count, type)
+- Endpoint table (method, path, operation ID)
+- Per-entity property details (with `-v`)
+
+---
 
 #### integrate analyze
 

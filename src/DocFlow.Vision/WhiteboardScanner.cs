@@ -196,13 +196,19 @@ public sealed partial class WhiteboardScanner : IWhiteboardScanner
                 model = CreateBasicModelFromMermaid(mermaidContent);
             }
 
+            // Detect diagram type from the Mermaid content (more reliable than AI detection)
+            var detectedType = DetectDiagramTypeFromMermaid(mermaidContent);
+
+            // Calculate confidence based on extraction quality
+            var calculatedConfidence = CalculateExtractionConfidence(model);
+
             // Update model provenance
             model.Provenance = new ModelProvenance
             {
                 SourceFormat = "Whiteboard",
                 CreatedAt = DateTime.UtcNow,
                 SourceFiles = input.FilePath != null ? [input.FilePath] : [],
-                Notes = [$"Detected as {diagramType.PrimaryType} with {diagramType.Confidence:P0} confidence"]
+                Notes = [$"Detected as {detectedType} with {calculatedConfidence:P0} confidence"]
             };
 
             totalStopwatch.Stop();
@@ -221,8 +227,8 @@ public sealed partial class WhiteboardScanner : IWhiteboardScanner
             {
                 Model = model,
                 Success = true,
-                DetectedDiagramType = diagramType.PrimaryType,
-                OverallConfidence = diagramType.Confidence,
+                DetectedDiagramType = detectedType,
+                OverallConfidence = calculatedConfidence,
                 GeneratedOutputs = generatedOutputs,
                 Errors = errors,
                 Warnings = warnings,
@@ -495,6 +501,69 @@ public sealed partial class WhiteboardScanner : IWhiteboardScanner
             OverallConfidence = 0.0,
             Errors = errors
         };
+    }
+
+    /// <summary>
+    /// Detects diagram type from the Mermaid content prefix.
+    /// More reliable than AI detection for determining the output format.
+    /// </summary>
+    private static DiagramType DetectDiagramTypeFromMermaid(string mermaidContent)
+    {
+        if (string.IsNullOrWhiteSpace(mermaidContent))
+            return DiagramType.Unknown;
+
+        var trimmed = mermaidContent.TrimStart();
+
+        if (trimmed.StartsWith("classDiagram", StringComparison.OrdinalIgnoreCase))
+            return DiagramType.ClassDiagram;
+
+        if (trimmed.StartsWith("flowchart", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("graph", StringComparison.OrdinalIgnoreCase))
+            return DiagramType.Flowchart;
+
+        if (trimmed.StartsWith("sequenceDiagram", StringComparison.OrdinalIgnoreCase))
+            return DiagramType.SequenceDiagram;
+
+        if (trimmed.StartsWith("erDiagram", StringComparison.OrdinalIgnoreCase))
+            return DiagramType.EntityRelationshipDiagram;
+
+        if (trimmed.StartsWith("stateDiagram", StringComparison.OrdinalIgnoreCase))
+            return DiagramType.StateDiagram;
+
+        if (trimmed.StartsWith("mindmap", StringComparison.OrdinalIgnoreCase))
+            return DiagramType.MindMap;
+
+        return DiagramType.Unknown;
+    }
+
+    /// <summary>
+    /// Calculates confidence based on extraction quality metrics.
+    /// </summary>
+    private static double CalculateExtractionConfidence(SemanticModel model)
+    {
+        // No entities = 0% confidence
+        if (model.Entities.Count == 0)
+            return 0.0;
+
+        // Base: 70% if any entities extracted
+        var confidence = 0.70;
+
+        // +2% per entity (max +20%)
+        var entityBonus = Math.Min(model.Entities.Count * 0.02, 0.20);
+        confidence += entityBonus;
+
+        // +1% per relationship (max +10%)
+        var relationshipBonus = Math.Min(model.Relationships.Count * 0.01, 0.10);
+        confidence += relationshipBonus;
+
+        // +5% if aggregate root detected
+        var hasAggregateRoot = model.Entities.Values.Any(e =>
+            e.Classification == EntityClassification.AggregateRoot);
+        if (hasAggregateRoot)
+            confidence += 0.05;
+
+        // Cap at 95%
+        return Math.Min(confidence, 0.95);
     }
 
     // Compiled regex patterns for performance

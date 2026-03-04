@@ -7,8 +7,22 @@ This directory contains sample files for testing the DocFlow Integration module 
 | File | Description |
 |------|-------------|
 | `petstore.json` | Sample OpenAPI 3.0.3 specification |
-| `SampleCdm/Entities.cs` | Sample Canonical Data Model entities |
+| `SampleCdm/Entities.cs` | Sample Canonical Data Model entities (e-commerce) |
 | `sla-test-guide.md` | Guide for testing SLA validation with public APIs |
+
+---
+
+## Development Setup
+
+All commands in this guide use the `docflow-dev.sh` script (Linux/Mac) or `docflow-dev.cmd` (Windows) which runs the CLI from the local build.
+
+```bash
+# From the repository root:
+./docflow-dev.sh <command> [args]
+
+# On Windows:
+docflow-dev.cmd <command> [args]
+```
 
 ---
 
@@ -17,7 +31,7 @@ This directory contains sample files for testing the DocFlow Integration module 
 ### 1. Analyze CDM Mapping
 
 ```bash
-dotnet run --project src/DocFlow.CLI -- integrate analyze samples/integration-demos/petstore.json --cdm samples/integration-demos/SampleCdm/Entities.cs -v
+./docflow-dev.sh integrate analyze samples/integration-demos/petstore.json --cdm samples/integration-demos/SampleCdm/Entities.cs -v
 ```
 
 **Expected Output:**
@@ -39,7 +53,7 @@ Entity Mappings:
 
 ```bash
 # Test with World Time API
-dotnet run --project src/DocFlow.CLI -- integrate sla http://worldtimeapi.org/api/timezone/UTC --expected 30s --samples 5 --interval 2s
+./docflow-dev.sh integrate sla http://worldtimeapi.org/api/timezone/UTC --expected 30s --samples 5 --interval 2s
 ```
 
 See `sla-test-guide.md` for more public API testing options.
@@ -48,7 +62,7 @@ See `sla-test-guide.md` for more public API testing options.
 
 ```bash
 # Generate to /tmp/generated directory
-dotnet run --project src/DocFlow.CLI -- integrate generate samples/integration-demos/petstore.json --cdm samples/integration-demos/SampleCdm/Entities.cs -o /tmp/generated -n Petstore.Integration
+./docflow-dev.sh integrate generate samples/integration-demos/petstore.json --cdm samples/integration-demos/SampleCdm/Entities.cs -o /tmp/generated -n Petstore.Integration
 ```
 
 **Expected Output:**
@@ -206,13 +220,13 @@ public class PetDtoValidator : AbstractValidator<PetDto>
 
 ```bash
 # 1. Analyze how the external API maps to your domain model
-dotnet run --project src/DocFlow.CLI -- integrate analyze samples/integration-demos/petstore.json --cdm samples/integration-demos/SampleCdm/Entities.cs --threshold 70 -v
+./docflow-dev.sh integrate analyze samples/integration-demos/petstore.json --cdm samples/integration-demos/SampleCdm/Entities.cs --threshold 70 -v
 
 # 2. (Optional) Validate SLA if the API is live
-dotnet run --project src/DocFlow.CLI -- integrate sla https://petstore.example.com/api/v1/pets --expected 30s --samples 10
+./docflow-dev.sh integrate sla https://petstore.example.com/api/v1/pets --expected 30s --samples 10
 
 # 3. Generate integration code
-dotnet run --project src/DocFlow.CLI -- integrate generate samples/integration-demos/petstore.json --cdm samples/integration-demos/SampleCdm/Entities.cs -o ./Generated -n MyApp.Integration.Petstore
+./docflow-dev.sh integrate generate samples/integration-demos/petstore.json --cdm samples/integration-demos/SampleCdm/Entities.cs -o ./Generated -n MyApp.Integration.Petstore
 
 # 4. Review and customize
 # - Check TODO comments in generated mapper
