@@ -103,7 +103,6 @@ Maps source field to target field:
 ### ApiMappingPatterns
 
 Pre-built patterns for common domains:
-- **Aviation**: tail_num -> TailNumber, arr_time -> ArrivalDateTime, pax -> PassengerCount
 - **DateTime**: ISO/Unix timestamp conversions
 - **Identifiers**: Primary key, foreign key, correlation ID patterns
 - **Contact**: Email, phone, name patterns
@@ -112,6 +111,18 @@ Pre-built patterns for common domains:
 ---
 
 ## CLI Commands
+
+### Parse OpenAPI Spec
+
+```bash
+docflow integrate parse <spec.json> [options]
+  -v, --verbose          Show entity property details
+```
+
+**Example:**
+```bash
+docflow integrate parse petstore.json -v
+```
 
 ### Analyze CDM Mapping
 
@@ -299,31 +310,16 @@ Compliance:       100% (10/10 samples)
 
 ---
 
-## Aviation Domain Patterns (Pre-seeded)
-
-| External Field Pattern | CDM Target | Confidence |
-|------------------------|------------|------------|
-| `tail_num`, `aircraft_id`, `registration` | TailNumber | 95% |
-| `arr_time`, `eta`, `arrival` | ArrivalDateTime | 93% |
-| `dep_time`, `etd`, `departure` | DepartureDateTime | 93% |
-| `origin_icao`, `from_airport` | OriginAirportCode | 92% |
-| `dest_icao`, `to_airport` | DestinationAirportCode | 92% |
-| `pax`, `passenger_count` | PassengerCount | 90% |
-| `fuel_qty`, `fuel_amount` | FuelQuantity | 88% |
-| `fbo_id`, `handler` | FboId | 85% |
-
----
-
 ## Future Enhancements (Planned)
 
 ### IMS Pattern Learning
 The IMS will learn from:
-1. **Built-in patterns** - Domain-specific knowledge (aviation, etc.)
+1. **Built-in patterns** - Domain-specific knowledge (e-commerce, etc.)
 2. **Existing integrations** - Analyze your manual mappers
 3. **User feedback** - Corrections improve future suggestions
 
 ```
-docflow integrate learn ./src/Integrations/FlightBridge/Mapper.cs
+docflow integrate learn ./src/Integrations/Petstore/Mapper.cs
 
 Learning from example...
    Extracted 23 new patterns

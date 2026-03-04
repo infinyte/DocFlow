@@ -182,11 +182,27 @@ public sealed partial class MermaidClassDiagramParser : IModelParser
     private SemanticProperty ParseProperty(Match match)
     {
         var visibility = ParseVisibility(match.Groups["visibility"].Value);
-        var name = match.Groups["name"].Value;
-        // Type is optional - default to "object" if not specified
-        var typeName = match.Groups["type"].Success && !string.IsNullOrWhiteSpace(match.Groups["type"].Value)
-            ? match.Groups["type"].Value
-            : "object";
+
+        // Support two formats:
+        // Format 1: +Type name [annotations] (type1/name1 groups)
+        // Format 2: +name : Type (name2/type2 groups)
+        string name;
+        string typeName;
+
+        if (match.Groups["name1"].Success && !string.IsNullOrWhiteSpace(match.Groups["name1"].Value))
+        {
+            // Format 1: +Type name
+            name = match.Groups["name1"].Value;
+            typeName = match.Groups["type1"].Value;
+        }
+        else
+        {
+            // Format 2: +name : Type
+            name = match.Groups["name2"].Value;
+            typeName = match.Groups["type2"].Success && !string.IsNullOrWhiteSpace(match.Groups["type2"].Value)
+                ? match.Groups["type2"].Value
+                : "object";
+        }
 
         return new SemanticProperty
         {
@@ -240,22 +256,33 @@ public sealed partial class MermaidClassDiagramParser : IModelParser
 
     private SemanticRelationship? ParseRelationship(Match match, Dictionary<string, SemanticEntity> entityByName, SemanticModel model)
     {
-        var sourceName = match.Groups["source"].Value;
-        var sourceMultStr = match.Groups["sourceMult"].Value;
+        var leftName = match.Groups["source"].Value;
+        var leftMultStr = match.Groups["sourceMult"].Value;
         var arrow = match.Groups["arrow"].Value;
-        var targetMultStr = match.Groups["targetMult"].Value;
-        var targetName = match.Groups["target"].Value;
+        var rightMultStr = match.Groups["targetMult"].Value;
+        var rightName = match.Groups["target"].Value;
         var label = match.Groups["label"].Value;
 
-        if (!entityByName.TryGetValue(sourceName, out var sourceEntity) ||
-            !entityByName.TryGetValue(targetName, out var targetEntity))
+        if (!entityByName.TryGetValue(leftName, out var leftEntity) ||
+            !entityByName.TryGetValue(rightName, out var rightEntity))
         {
             return null;
         }
 
         var relType = ParseRelationshipType(arrow);
-        var sourceMult = string.IsNullOrEmpty(sourceMultStr) ? Multiplicity.One : Multiplicity.Parse(sourceMultStr.Trim('"'));
-        var targetMult = string.IsNullOrEmpty(targetMultStr) ? Multiplicity.One : Multiplicity.Parse(targetMultStr.Trim('"'));
+        var leftMult = string.IsNullOrEmpty(leftMultStr) ? Multiplicity.One : Multiplicity.Parse(leftMultStr.Trim('"'));
+        var rightMult = string.IsNullOrEmpty(rightMultStr) ? Multiplicity.One : Multiplicity.Parse(rightMultStr.Trim('"'));
+
+        // Determine direction based on arrow type
+        // Left-pointing arrows (<|--, <|.., *--, o--, <--, <..) mean: right entity is the source
+        // Right-pointing arrows (--|>, ..|>, --*, --o, -->, ..>) mean: left entity is the source
+        // For inheritance: source = child (the one extending), target = parent (the one being extended)
+        var isLeftPointing = arrow.StartsWith('<') || arrow.StartsWith('*') || arrow.StartsWith('o');
+
+        var sourceEntity = isLeftPointing ? rightEntity : leftEntity;
+        var targetEntity = isLeftPointing ? leftEntity : rightEntity;
+        var sourceMult = isLeftPointing ? rightMult : leftMult;
+        var targetMult = isLeftPointing ? leftMult : rightMult;
 
         return new SemanticRelationship
         {
@@ -396,9 +423,10 @@ public sealed partial class MermaidClassDiagramParser : IModelParser
     [GeneratedRegex(@"^\s*<<(?<stereotype>[\w\s]+)>>\s*$")]
     private static partial Regex StereotypeRegex();
 
-    // Property regex: visibility + name, optionally followed by : Type
-    // Examples: -ID, +name : String, #status : OrderStatus
-    [GeneratedRegex(@"^\s*(?<visibility>[+\-#~])(?<name>\w+)(?:\s*:\s*(?<type>.+?))?\s*$")]
+    // Property regex: supports two formats:
+    // Format 1: +name : Type (standard Mermaid) - Examples: -ID, +name : String
+    // Format 2: +Type name [annotations] (alternative) - Examples: +String BaseStayKey PK,FK
+    [GeneratedRegex(@"^\s*(?<visibility>[+\-#~])(?:(?<type1>\w+)\s+(?<name1>\w+)(?:\s+\S+)*|(?<name2>\w+)(?:\s*:\s*(?<type2>.+?))?)\s*$")]
     private static partial Regex PropertyRegex();
 
     [GeneratedRegex(@"^\s*(?<visibility>[+\-#~])(?<name>\w+)\s*\((?<params>[^)]*)\)\s*(?<return>\S+)?(?<modifiers>[$*])?.*$")]

@@ -231,13 +231,13 @@ Mermaid .mmd File
 The Integration module extends the canonical model pattern to enterprise API integrations:
 
 ```
-+-------------------------------------------------------------------------+
-|                        External API Ecosystem                            |
-+-----------------+-----------------+-----------------+--------------------+
-|   OpenAPI 3.x   |   Swagger 2.0   |   GraphQL       |   JSON Samples     |
-+--------+--------+--------+--------+--------+--------+---------+----------+
-         |                 |                 |                  |
-         +-----------------+-----------------+------------------+
++-----------------------------------------------+
+|            External API Ecosystem             |
++-----------------------+-----------------------+
+|     OpenAPI 3.x JSON  |   OpenAPI 3.x YAML    |
++----------+------------+-----------+-----------+
+           |                        |
+           +------------------------+
                                     |
                                     v
                     +-------------------------------+
@@ -310,14 +310,29 @@ Compliance verdicts:
 
 ### Pre-built Domain Patterns
 
-The Integration module includes pre-seeded patterns for common domains:
+The Integration module ships with pre-seeded patterns across four categories:
 
-**Aviation Domain:**
-| External Pattern | Canonical Target | Confidence |
-|------------------|------------------|------------|
-| `tail_num`, `aircraft_id` | TailNumber | 95% |
-| `arr_time`, `eta` | ArrivalDateTime | 93% |
-| `pax`, `passenger_count` | PassengerCount | 90% |
+**Identifiers:**
+| Pattern | Matches | Semantic |
+|---------|---------|----------|
+| Primary Key | `id`, `*_id`, `guid`, `uuid` | Identity |
+| Foreign Key | `*_id` suffix | Navigation |
+| External Reference | `ext_id`, `ref_id`, `source_key` | External |
+| Correlation ID | `correlation_id`, `trace_id`, `request_id` | Tracking |
+
+**DateTime Conversions:**
+| Rule | Input | Output |
+|------|-------|--------|
+| ISO to DateTime | ISO 8601 string | `DateTime` |
+| Unix seconds | `long` epoch | `DateTime` |
+| Unix millis | `long` epoch ms | `DateTime` |
+| US date to ISO | `MM/dd/yyyy` | `yyyy-MM-dd` |
+
+**Contact:**
+`email` / `e_mail`, `phone` / `tel` / `mobile`, `first_name` / `fname`, `last_name` / `lname`
+
+**Audit:**
+`created_at` / `inserted_at`, `updated_at` / `modified_at`, `created_by`, `updated_by`
 
 ---
 

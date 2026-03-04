@@ -176,22 +176,6 @@ public sealed class CdmMapper
         // Common domain concept mappings
         var semanticMappings = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {
-            // Aviation domain
-            ["Flight"] = ["FlightLeg", "FlightSegment", "Leg", "Trip"],
-            ["FlightLeg"] = ["Flight", "FlightSegment", "Leg"],
-            ["Fbo"] = ["FixedBaseOperator", "FBO", "Handler", "GroundHandler"],
-            ["FBO"] = ["FixedBaseOperator", "Fbo", "Handler", "GroundHandler"],
-            ["FixedBaseOperator"] = ["Fbo", "FBO", "Handler"],
-            ["Reservation"] = ["TripReservation", "Booking", "FlightReservation"],
-            ["TripReservation"] = ["Reservation", "Booking"],
-            ["Booking"] = ["Reservation", "TripReservation"],
-            ["FuelQuote"] = ["FuelPricing", "FuelPrice", "Quote"],
-            ["FuelPricing"] = ["FuelQuote", "FuelPrice"],
-            ["Passenger"] = ["PassengerInfo", "Pax", "Traveler"],
-            ["PassengerInfo"] = ["Passenger", "Pax", "Traveler"],
-            ["CrewMember"] = ["CrewAssignment", "Crew", "FlightCrew"],
-            ["CrewAssignment"] = ["CrewMember", "Crew"],
-
             // E-commerce / Retail
             ["Pet"] = ["Product", "Item", "Goods", "Merchandise"],
             ["Product"] = ["Pet", "Item", "Goods", "Merchandise"],

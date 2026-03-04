@@ -84,7 +84,7 @@ public sealed class RateLimitInfo
 public sealed class ApiEntityMetadata
 {
     /// <summary>
-    /// The external system this entity comes from (e.g., "FlightBridge", "1200Aero")
+    /// The external system this entity comes from (e.g., "PetStore", "ExternalApi")
     /// </summary>
     public required string SourceSystem { get; init; }
     

@@ -60,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `codegen` (alias: `c`) - Generate C# from Mermaid
   - `roundtrip` (alias: `r`) - Full round-trip test
   - `scan` (alias: `s`) - Whiteboard scanning
-  - `integrate` - API integration commands
+  - `integrate` - API integration sub-commands: `parse`, `analyze`, `sla`, `generate`
 - Global options: `--verbose`, `--quiet`
 
 #### Integration Module (DocFlow.Integration)
@@ -106,17 +106,15 @@ Complete API integration automation extending the canonical model:
 - Rich CLI output showing generated files
 
 **Pre-built Patterns**
-- Aviation domain patterns (tail_num, arr_time, pax, etc.)
 - DateTime conversion patterns
 - Identifier patterns (primary key, foreign key)
 - Contact patterns (email, phone)
 - Audit patterns (created_at, updated_at)
 
 #### Testing
-- 91 unit tests across 3 test projects:
+- 72 unit tests across 2 test projects:
   - DocFlow.CodeAnalysis.Tests: 20 tests
   - DocFlow.Diagrams.Tests: 52 tests
-  - DocFlow.CodeGen.Tests: 19 tests
 
 #### Documentation
 - Comprehensive README with feature status
@@ -131,7 +129,7 @@ Complete API integration automation extending the canonical model:
 ### Technical Details
 
 - **.NET 8.0** with C# 12 features
-- **12 projects** in solution (all compiling)
+- **13 projects** in solution (11 source + 2 test, all compiling)
 - **Nullable reference types** enabled throughout
 - **Async/await** with CancellationToken support
 - **Records** for immutable types

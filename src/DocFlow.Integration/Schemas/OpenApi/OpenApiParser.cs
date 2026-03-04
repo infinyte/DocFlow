@@ -408,7 +408,7 @@ public sealed class OpenApiParser : ISchemaParser
         if (string.IsNullOrEmpty(name)) return name;
         
         // Handle snake_case and kebab-case
-        var parts = name.Split(['_', '-'], StringSplitOptions.RemoveEmptyEntries);
+        var parts = name.Split(new[] { '_', '-' }, StringSplitOptions.RemoveEmptyEntries);
         return string.Concat(parts.Select(p => 
             char.ToUpperInvariant(p[0]) + p[1..].ToLowerInvariant()));
     }

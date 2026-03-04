@@ -38,9 +38,12 @@ public sealed class CSharpModelGenerator : IModelGenerator
             .GroupBy(r => r.SourceEntityId)
             .ToDictionary(g => g.Key, g => g.ToList());
 
+        // Use GroupBy + First to handle cases where an entity might have multiple inheritance relationships
+        // (C# only supports single inheritance, so we take the first one)
         var inheritanceBySource = model.Relationships
             .Where(r => r.Type == RelationshipType.Inheritance)
-            .ToDictionary(r => r.SourceEntityId, r => r);
+            .GroupBy(r => r.SourceEntityId)
+            .ToDictionary(g => g.Key, g => g.First());
 
         var implementationsBySource = model.Relationships
             .Where(r => r.Type == RelationshipType.Implementation)
@@ -158,6 +161,9 @@ public sealed class CSharpModelGenerator : IModelGenerator
 
     private void GenerateRecord(StringBuilder sb, SemanticEntity entity, string baseTypes, GeneratorOptions options)
     {
+        // DDD classification attributes
+        GenerateDddAttribute(sb, entity);
+
         var properties = entity.Properties.Where(p => p.Semantics != PropertySemantics.Collection).ToList();
 
         // Build primary constructor parameters
@@ -198,6 +204,9 @@ public sealed class CSharpModelGenerator : IModelGenerator
 
     private void GenerateClass(StringBuilder sb, SemanticEntity entity, string baseTypes, GeneratorOptions options)
     {
+        // DDD classification attributes
+        GenerateDddAttribute(sb, entity);
+
         // Class modifiers
         var modifiers = "public";
         if (entity.Stereotypes.Contains("abstract") || entity.Classification == EntityClassification.AbstractClass)
@@ -356,6 +365,35 @@ public sealed class CSharpModelGenerator : IModelGenerator
         }
 
         return string.Join(", ", baseTypes);
+    }
+
+    /// <summary>
+    /// Generates DDD classification attributes for entities with significant stereotypes.
+    /// </summary>
+    private static void GenerateDddAttribute(StringBuilder sb, SemanticEntity entity)
+    {
+        var attributeName = entity.Classification switch
+        {
+            EntityClassification.AggregateRoot => "AggregateRoot",
+            EntityClassification.Entity => "Entity",
+            EntityClassification.ValueObject => "ValueObject",
+            EntityClassification.DomainService => "DomainService",
+            EntityClassification.DomainEvent => "DomainEvent",
+            EntityClassification.Repository => "Repository",
+            EntityClassification.Factory => "Factory",
+            EntityClassification.Specification => "Specification",
+            EntityClassification.DataTransferObject => "DataTransferObject",
+            EntityClassification.ViewModel => "ViewModel",
+            EntityClassification.Command => "Command",
+            EntityClassification.Query => "Query",
+            EntityClassification.Handler => "Handler",
+            _ => null
+        };
+
+        if (attributeName != null)
+        {
+            sb.AppendLine($"[{attributeName}]");
+        }
     }
 
     private string FormatTypeName(SemanticType type, bool isRequired)
