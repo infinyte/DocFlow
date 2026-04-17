@@ -28,6 +28,7 @@
     <ProjectReference Include="..\DocFlow.Ontology\DocFlow.Ontology.csproj" />
     <ProjectReference Include="..\DocFlow.AI\DocFlow.AI.csproj" />
     <ProjectReference Include="..\DocFlow.Integration\DocFlow.Integration.csproj" />
+    <ProjectReference Include="..\DocFlow.Documentation\DocFlow.Documentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,6 +37,10 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DocFlow.CLI.Tests" />
   </ItemGroup>
 
 </Project>

@@ -11,6 +11,10 @@ using DocFlow.Core.Abstractions;
 using DocFlow.Core.CanonicalModel;
 using DocFlow.Diagrams.Mermaid;
 using System.Text.RegularExpressions;
+using DocFlow.Documentation.Diff;
+using DocFlow.Documentation.Html;
+using DocFlow.Documentation.Markdown;
+using DocFlow.Documentation.Options;
 using DocFlow.Integration.CodeGen;
 using DocFlow.Integration.Mapping;
 using DocFlow.Integration.Models;
@@ -868,8 +872,100 @@ public class Program
         command.AddCommand(BuildAnalyzeCommand());
         command.AddCommand(BuildSlaCommand());
         command.AddCommand(BuildGenerateCommand());
+        command.AddCommand(BuildDocsCommand());
+        command.AddCommand(BuildDiffCommand());
 
         return command;
+    }
+
+    private static Command BuildDiffCommand()
+    {
+        var oldSpecArg = new Argument<FileInfo>(
+            name: "old-spec",
+            description: "Previous API specification file");
+        var newSpecArg = new Argument<FileInfo>(
+            name: "new-spec",
+            description: "Current API specification file");
+        var outputOption = new Option<FileInfo>(
+            aliases: ["-o", "--output"],
+            description: "Output changelog file path")
+        {
+            IsRequired = true
+        };
+
+        var command = new Command("diff", "Diff two API specifications and emit a breaking/non-breaking Markdown changelog")
+        {
+            oldSpecArg,
+            newSpecArg,
+            outputOption
+        };
+
+        command.SetHandler(async (context) =>
+        {
+            var oldSpec = context.ParseResult.GetValueForArgument(oldSpecArg);
+            var newSpec = context.ParseResult.GetValueForArgument(newSpecArg);
+            var output = context.ParseResult.GetValueForOption(outputOption)!;
+
+            context.ExitCode = await ExecuteDiffCommand(oldSpec, newSpec, output);
+        });
+
+        return command;
+    }
+
+    internal static async Task<int> ExecuteDiffCommand(FileInfo oldSpec, FileInfo newSpec, FileInfo output)
+    {
+        if (!oldSpec.Exists)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Old spec not found: [yellow]{Markup.Escape(oldSpec.FullName)}[/]");
+            return 1;
+        }
+        if (!newSpec.Exists)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] New spec not found: [yellow]{Markup.Escape(newSpec.FullName)}[/]");
+            return 1;
+        }
+
+        var registry = new SpecParserRegistry([new OpenApiParser()]);
+
+        SemanticModel oldModel, newModel;
+        try
+        {
+            oldModel = await ParseSpecAsync(registry, oldSpec);
+            newModel = await ParseSpecAsync(registry, newSpec);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or FormatException)
+        {
+            AnsiConsole.MarkupLine($"[red]Error parsing spec:[/] {Markup.Escape(ex.Message)}");
+            return 1;
+        }
+
+        var diff = new SpecDiffer().Diff(oldModel, newModel);
+        var changelog = new ChangelogGenerator().Render(diff);
+
+        try
+        {
+            var dir = Path.GetDirectoryName(output.FullName);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            await File.WriteAllTextAsync(output.FullName, changelog);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            AnsiConsole.MarkupLine($"[red]I/O error:[/] {Markup.Escape(ex.Message)}");
+            return 2;
+        }
+
+        AnsiConsole.MarkupLine($"[green]Wrote[/] {Markup.Escape(output.FullName)} ([red]{diff.BreakingCount} breaking[/], [yellow]{diff.NonBreakingCount} non-breaking[/])");
+        return 0;
+    }
+
+    private static async Task<SemanticModel> ParseSpecAsync(SpecParserRegistry registry, FileInfo spec)
+    {
+        var parser = registry.Select(spec.FullName, content: null);
+        using var stream = File.OpenRead(spec.FullName);
+        return await parser.ParseAsync(stream);
     }
 
     private static Command BuildParseCommand()
@@ -2133,6 +2229,333 @@ public class Program
 
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine($"[dim]Completed in {elapsedMs}ms[/]");
+    }
+
+    private static Command BuildDocsCommand()
+    {
+        var specArg = new Argument<FileInfo>(
+            name: "spec",
+            description: "OpenAPI specification file (JSON or YAML)");
+
+        var outputOption = new Option<DirectoryInfo>(
+            aliases: ["-o", "--output"],
+            description: "Output directory for the documentation bundle")
+        {
+            IsRequired = true
+        };
+
+        var formatOption = new Option<string>(
+            aliases: ["--format"],
+            getDefaultValue: () => "markdown",
+            description: "Output format: markdown or html");
+
+        var diagramsOption = new Option<string>(
+            aliases: ["--diagrams"],
+            getDefaultValue: () => "all",
+            description: "Comma-separated diagram kinds: class,er,sequence,context,flow,all,none");
+
+        var withExamplesOption = new Option<bool>(
+            aliases: ["--with-examples"],
+            description: "Include synthesized example payloads (Phase 3 — currently a no-op)");
+
+        var groupByOption = new Option<string>(
+            aliases: ["--group-by"],
+            getDefaultValue: () => "tag",
+            description: "Group endpoint pages by tag or path");
+
+        var titleOption = new Option<string?>(
+            aliases: ["--title"],
+            description: "Override the API title in the generated docs");
+
+        var watchOption = new Option<bool>(
+            aliases: ["--watch"],
+            description: "Regenerate the bundle whenever the spec file changes");
+
+        var command = new Command("docs", "Generate a design-documentation bundle from an API specification")
+        {
+            specArg,
+            outputOption,
+            formatOption,
+            diagramsOption,
+            withExamplesOption,
+            groupByOption,
+            titleOption,
+            watchOption,
+            VerboseOption
+        };
+
+        command.SetHandler(async (context) =>
+        {
+            var spec = context.ParseResult.GetValueForArgument(specArg);
+            var output = context.ParseResult.GetValueForOption(outputOption)!;
+            var format = context.ParseResult.GetValueForOption(formatOption) ?? "markdown";
+            var diagrams = context.ParseResult.GetValueForOption(diagramsOption) ?? "class";
+            var withExamples = context.ParseResult.GetValueForOption(withExamplesOption);
+            var groupBy = context.ParseResult.GetValueForOption(groupByOption) ?? "tag";
+            var title = context.ParseResult.GetValueForOption(titleOption);
+            var watch = context.ParseResult.GetValueForOption(watchOption);
+            var verbose = context.ParseResult.GetValueForOption(VerboseOption);
+
+            if (watch)
+            {
+                context.ExitCode = await RunWatchAsync(
+                    spec, output, format, diagrams, withExamples, groupBy, title, verbose,
+                    context.GetCancellationToken());
+            }
+            else
+            {
+                context.ExitCode = await ExecuteDocsCommand(
+                    spec, output, format, diagrams, withExamples, groupBy, title, verbose);
+            }
+        });
+
+        return command;
+    }
+
+    internal static async Task<int> RunWatchAsync(
+        FileInfo spec,
+        DirectoryInfo output,
+        string format,
+        string diagrams,
+        bool withExamples,
+        string groupBy,
+        string? title,
+        bool verbose,
+        CancellationToken cancellationToken)
+    {
+        if (!spec.Exists)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Spec file not found: [yellow]{Markup.Escape(spec.FullName)}[/]");
+            return 1;
+        }
+
+        var initial = await ExecuteDocsCommand(spec, output, format, diagrams, withExamples, groupBy, title, verbose);
+        if (initial != 0) return initial;
+
+        AnsiConsole.MarkupLine($"[dim]Watching[/] [cyan]{Markup.Escape(spec.FullName)}[/] [dim]— press Ctrl+C to stop.[/]");
+
+        var debounce = TimeSpan.FromMilliseconds(300);
+        var lastTriggered = DateTime.MinValue;
+        var gate = new SemaphoreSlim(1, 1);
+
+        using var watcher = new FileSystemWatcher(spec.DirectoryName!, spec.Name)
+        {
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.CreationTime
+        };
+
+        watcher.Changed += OnChange;
+        watcher.Created += OnChange;
+        watcher.Renamed += OnChange;
+        watcher.EnableRaisingEvents = true;
+
+        try
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // expected on Ctrl+C / test cancellation
+        }
+
+        return 0;
+
+        async void OnChange(object sender, FileSystemEventArgs e)
+        {
+            var now = DateTime.UtcNow;
+            lock (gate)
+            {
+                if (now - lastTriggered < debounce) return;
+                lastTriggered = now;
+            }
+
+            try
+            {
+                await Task.Delay(debounce, cancellationToken);
+                if (!await gate.WaitAsync(0, cancellationToken)) return;
+                try
+                {
+                    AnsiConsole.MarkupLine("[dim]spec changed; regenerating...[/]");
+                    await ExecuteDocsCommand(spec, output, format, diagrams, withExamples, groupBy, title, verbose);
+                    AnsiConsole.MarkupLine("[green]Bundle updated.[/]");
+                }
+                finally
+                {
+                    gate.Release();
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]Regeneration failed:[/] {Markup.Escape(ex.Message)}");
+            }
+        }
+    }
+
+    internal static async Task<int> ExecuteDocsCommand(
+        FileInfo spec,
+        DirectoryInfo output,
+        string format,
+        string diagrams,
+        bool withExamples,
+        string groupBy,
+        string? title,
+        bool verbose)
+    {
+        if (!spec.Exists)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Spec file not found: [yellow]{Markup.Escape(spec.FullName)}[/]");
+            return 1;
+        }
+
+        if (!string.Equals(format, "markdown", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(format, "html", StringComparison.OrdinalIgnoreCase))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Unknown --format '[yellow]{Markup.Escape(format)}[/]'. Expected 'markdown' or 'html'.");
+            return 1;
+        }
+
+        var htmlRequested = string.Equals(format, "html", StringComparison.OrdinalIgnoreCase);
+
+        if (!TryParseGroupBy(groupBy, out var groupByEnum))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Unknown --group-by '[yellow]{Markup.Escape(groupBy)}[/]'. Expected 'tag' or 'path'.");
+            return 1;
+        }
+
+        if (!TryParseDiagrams(diagrams, out var diagramKinds, out var diagramError))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] {Markup.Escape(diagramError!)}");
+            return 1;
+        }
+
+        var specExtension = Path.GetExtension(spec.FullName).ToLowerInvariant();
+        var specAssetName = specExtension switch
+        {
+            ".yaml" => "assets/openapi.yaml",
+            ".yml" => "assets/openapi.yml",
+            _ => "assets/openapi.json"
+        };
+        var specMediaType = specExtension switch
+        {
+            ".yaml" or ".yml" => "application/yaml",
+            _ => "application/json"
+        };
+        var specContent = await File.ReadAllTextAsync(spec.FullName);
+        var sourceSpec = new DocFlow.Documentation.Models.GeneratedFile(specAssetName, specContent, specMediaType);
+
+        var options = new DocumentationOptions
+        {
+            Format = htmlRequested ? DocumentationFormat.Html : DocumentationFormat.Markdown,
+            Diagrams = diagramKinds,
+            WithExamples = withExamples,
+            GroupBy = groupByEnum,
+            Title = title,
+            SourceSpec = sourceSpec
+        };
+
+        var registry = new SpecParserRegistry([new OpenApiParser()]);
+        IApiSpecParser selected;
+        try
+        {
+            selected = registry.Select(spec.FullName, content: null);
+        }
+        catch (InvalidOperationException ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] {Markup.Escape(ex.Message)}");
+            return 1;
+        }
+
+        SemanticModel model;
+        try
+        {
+            using var stream = File.OpenRead(spec.FullName);
+            model = await selected.ParseAsync(stream);
+        }
+        catch (FormatException ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error parsing spec:[/] {Markup.Escape(ex.Message)}");
+            return 1;
+        }
+
+        var generator = new MarkdownDocumentationGenerator();
+        var files = await generator.GenerateAsync(model, options);
+
+        if (htmlRequested)
+        {
+            files = new StaticSiteRenderer().Render(files);
+        }
+
+        try
+        {
+            if (!output.Exists)
+            {
+                Directory.CreateDirectory(output.FullName);
+            }
+
+            foreach (var file in files)
+            {
+                var fullPath = Path.Combine(output.FullName, file.RelativePath);
+                var dir = Path.GetDirectoryName(fullPath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+                await File.WriteAllTextAsync(fullPath, file.Content);
+
+                if (verbose)
+                {
+                    AnsiConsole.MarkupLine($"  [green]wrote[/] {Markup.Escape(file.RelativePath)}");
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            AnsiConsole.MarkupLine($"[red]I/O error:[/] {Markup.Escape(ex.Message)}");
+            return 2;
+        }
+
+        AnsiConsole.MarkupLine($"[green]Generated[/] {files.Count} file(s) in [cyan]{Markup.Escape(output.FullName)}[/]");
+        return 0;
+    }
+
+    private static bool TryParseGroupBy(string value, out GroupBy groupBy)
+    {
+        switch (value?.Trim().ToLowerInvariant())
+        {
+            case "tag":
+                groupBy = GroupBy.Tag;
+                return true;
+            case "path":
+                groupBy = GroupBy.Path;
+                return true;
+            default:
+                groupBy = GroupBy.Tag;
+                return false;
+        }
+    }
+
+    private static bool TryParseDiagrams(string value, out DiagramKinds kinds, out string? error)
+    {
+        kinds = DiagramKinds.None;
+        error = null;
+
+        foreach (var token in value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            switch (token.ToLowerInvariant())
+            {
+                case "class": kinds |= DiagramKinds.Class; break;
+                case "er": kinds |= DiagramKinds.Er; break;
+                case "sequence": kinds |= DiagramKinds.Sequence; break;
+                case "context": kinds |= DiagramKinds.Context; break;
+                case "flow": kinds |= DiagramKinds.Flow; break;
+                case "all": kinds |= DiagramKinds.All; break;
+                case "none": break;
+                default:
+                    error = $"Unknown diagram kind '{token}'. Expected class, er, sequence, context, flow, all, or none.";
+                    return false;
+            }
+        }
+        return true;
     }
 
     #endregion

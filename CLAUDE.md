@@ -14,6 +14,8 @@ DocFlow is an intelligent documentation and modeling toolkit. Current implementa
 | Whiteboard Scanner | **Complete** | Claude Vision API integration |
 | CLI | **Complete** | System.CommandLine + Spectre.Console |
 | Integration Module | **Complete** | OpenAPI parsing, CDM mapping, SLA validation, code generation |
+| API Docs Generation | **Complete (Phases 1–5)** | OpenAPI → Markdown or HTML with class/ER/sequence/C4-context/endpoint-flow diagrams, synthesised JSON examples, dedicated security page, cross-linked entities, `--watch` regeneration, and pluggable `IApiSpecParser`s (`integrate docs`) |
+| API Spec Diff | **Complete (Phase 5)** | `integrate diff` produces a breaking / non-breaking Markdown changelog across two specs |
 | IMS Learning | Designed | Pattern learning system (not implemented) |
 | Document Pipeline | Planned | PDF/Word conversion |
 
@@ -73,6 +75,12 @@ docflow integrate sla <url> --expected <duration> [--samples 10] [--interval 5s]
 
 # Generate integration code (DTOs, AutoMapper, HTTP client, validators)
 docflow integrate generate <spec.json> --cdm <path> -o <dir> [-n namespace]
+
+# Generate a design-documentation bundle (Markdown or HTML + Mermaid diagrams)
+docflow integrate docs <spec.json> -o <dir> [--format markdown|html] [--diagrams class,er,sequence,context,flow,all,none] [--group-by tag|path] [--title "My API"] [--with-examples] [--watch] [-v]
+
+# Produce a breaking / non-breaking Markdown changelog between two specs
+docflow integrate diff <old-spec> <new-spec> -o <changelog.md>
 ```
 
 ## Architecture Overview
@@ -236,6 +244,21 @@ API keys can be configured via:
 | `src/DocFlow.Integration/Mapping/CdmMapper.cs` | CDM mapping with confidence |
 | `src/DocFlow.Integration/Validation/SlaValidator.cs` | SLA data freshness validation |
 | `src/DocFlow.Integration/CodeGen/IntegrationCodeGenerator.cs` | Integration code generation |
+| `src/DocFlow.Core/CanonicalModel/ApiSurface.cs` | Canonical API-surface records (operations, params, responses, security) |
+| `src/DocFlow.Documentation/Abstractions/IDocumentationGenerator.cs` | Documentation generator contract |
+| `src/DocFlow.Documentation/Markdown/MarkdownDocumentationGenerator.cs` | Phase 1 Markdown doc generator |
+| `src/DocFlow.Documentation/Markdown/Sections/` | Per-section builders (Overview/DomainModel/Endpoint/Index) |
+| `src/DocFlow.Diagrams/Mermaid/MermaidErDiagramGenerator.cs` | ER diagram from SemanticModel (Composition/Aggregation/Association) |
+| `src/DocFlow.Diagrams/Mermaid/MermaidSequenceDiagramGenerator.cs` | Per-operation sequence diagram from ApiOperation |
+| `src/DocFlow.Diagrams/Mermaid/MermaidC4ContextGenerator.cs` | C4-style system-context diagram (flowchart-LR fallback) |
+| `src/DocFlow.Diagrams/Mermaid/MermaidEndpointFlowchartGenerator.cs` | Per-operation request-lifecycle flowchart |
+| `src/DocFlow.Documentation/Examples/ExampleSynthesizer.cs` | Schema-driven JSON example synthesis (spec examples preferred) |
+| `src/DocFlow.Documentation/Html/StaticSiteRenderer.cs` | Markdown bundle → self-contained static HTML site (Markdig) |
+| `src/DocFlow.Documentation/Html/Assets/theme.css` | Embedded HTML theme (dark/light) |
+| `src/DocFlow.Documentation/Diff/SpecDiffer.cs` | Computes a breaking / non-breaking SpecDiff between two SemanticModels |
+| `src/DocFlow.Documentation/Diff/ChangelogGenerator.cs` | Renders a SpecDiff as a grouped Markdown changelog |
+| `src/DocFlow.Core/Abstractions/IApiSpecParser.cs` | Pluggable spec-parser strategy interface |
+| `src/DocFlow.Core/Abstractions/SpecParserRegistry.cs` | Picks the first registered parser whose CanParse matches |
 | `src/DocFlow.CLI/Program.cs` | CLI entry point |
 
 ## Sample Files
