@@ -55,8 +55,14 @@ public sealed class SemanticModel
     public List<SemanticRelationship> Relationships { get; init; }
     public List<SemanticNamespace> Namespaces { get; init; }
     public ModelProvenance? Provenance { get; set; }
+    public ApiSurface? Api { get; set; }                // API-level surface (operations, params, servers, security)
 }
 ```
+
+The optional `Api` property is populated by `OpenApiParser` and carries the API surface —
+operations, parameters, request/response bodies, servers, tags, and security schemes — so
+downstream generators (documentation, diagrams, clients) can reason about the API without
+re-parsing the source spec. See `src/DocFlow.Core/CanonicalModel/ApiSurface.cs`.
 
 ### SemanticEntity
 
@@ -154,9 +160,15 @@ public interface IModelGenerator
 | Component | Parser | Generator |
 |-----------|--------|-----------|
 | C# | `CSharpModelParser` | `CSharpModelGenerator` |
-| Mermaid | `MermaidClassDiagramParser` | `MermaidClassDiagramGenerator` |
+| Mermaid (class) | `MermaidClassDiagramParser` | `MermaidClassDiagramGenerator` |
+| Mermaid (ER) | - | `MermaidErDiagramGenerator` |
+| Mermaid (sequence) | - | `MermaidSequenceDiagramGenerator` |
+| Mermaid (C4 context) | - | `MermaidC4ContextGenerator` |
+| Mermaid (endpoint flow) | - | `MermaidEndpointFlowchartGenerator` |
 | Whiteboard | `WhiteboardScanner` | - |
-| OpenAPI | `OpenApiParser` | - |
+| OpenAPI | `OpenApiParser` (populates `SemanticModel.Api` incl. examples) | - |
+| Design Docs (Markdown) | - | `MarkdownDocumentationGenerator` |
+| Design Docs (HTML) | - | `StaticSiteRenderer` (Markdig) |
 
 ---
 
@@ -336,6 +348,201 @@ The Integration module ships with pre-seeded patterns across four categories:
 
 ---
 
+## Documentation Module Architecture
+
+`DocFlow.Documentation` composes the OpenAPI parser with the existing Mermaid class diagram
+generator to produce a navigable design-docs bundle. Phase 1 ships the Markdown MVP.
+
+```
+Source spec (OpenAPI 3.x)
+    |
+    v
++--------------------+
+|   OpenApiParser    |  populates SemanticModel.Entities + Api
++---------+----------+
+          |
+          v
++-------------------------------+
+|   MarkdownDocumentationGen    |
+|                               |
+|   +--------------------------+|
+|   | OverviewSectionBuilder   ||
+|   +--------------------------+|
+|   +--------------------------+|
+|   | DomainModelSectionBuilder||  invokes MermaidClassDiagramGenerator
+|   |                          ||  + MermaidErDiagramGenerator (Er flag)
+|   |                          ||  + injects <a id="entity-…"></a> anchors
+|   +--------------------------+|
+|   +--------------------------+|
+|   | ArchitectureSectionBuilder|  Context flag:
+|   |                          ||  + MermaidC4ContextGenerator
+|   |                          ||  emits architecture.md + diagrams/context.mmd
+|   +--------------------------+|
+|   +--------------------------+|
+|   | SecuritySectionBuilder   ||  emits security.md when schemes or
+|   |                          ||  operation requirements exist
+|   +--------------------------+|
+|   +--------------------------+|
+|   | EndpointSectionBuilder   ||  one page per tag (or path segment);
+|   |                          ||  embeds MermaidSequenceDiagramGenerator (Sequence flag)
+|   |                          ||  and MermaidEndpointFlowchartGenerator (Flow flag);
+|   |                          ||  optional WithExamples → ExampleSynthesizer JSON;
+|   |                          ||  entity refs linked into domain-model.md anchors;
+|   |                          ||  also emits standalone sequences/<opId>.md
+|   +--------------------------+|
+|   +--------------------------+|
+|   |  IndexSectionBuilder     ||  TOC built after siblings
+|   +--------------------------+|
++---------+---------------------+
+          |
+          v
+IReadOnlyList<GeneratedFile>   (pure in-memory; CLI writes to disk)
+          |
+          |  (optional, when --format html)
+          v
++-------------------------------+
+|   StaticSiteRenderer (Markdig)|   parallel .html for each .md;
+|                               |   mermaid fences via Markdig diagrams extension;
+|                               |   .md → .html link rewrite (fragments preserved);
+|                               |   per-page sidebar nav with .active highlight;
+|                               |   embedded assets/theme.css + Mermaid.js CDN
++-------------------------------+
+          |
+          v
+<output-dir>/{index,overview,domain-model,architecture,security}.md(+.html),
+             endpoints/<tag>.md(+.html),
+             sequences/<opId>.md(+.html),
+             diagrams/context.mmd,
+             assets/{openapi.{json|yaml},theme.css}
+```
+
+### Diagram kind mapping
+
+The `DocumentationOptions.Diagrams` flags enum selects which diagrams the generator emits.
+The CLI default is `all`.
+
+| Flag | Generator | Where it lands |
+|------|-----------|----------------|
+| `Class` | `MermaidClassDiagramGenerator` | `domain-model.md` |
+| `Er` | `MermaidErDiagramGenerator` | `domain-model.md` (after the class fence) |
+| `Sequence` | `MermaidSequenceDiagramGenerator` | `endpoints/<tag>.md` per operation + standalone `sequences/<opId>.md` |
+| `Context` | `MermaidC4ContextGenerator` | `architecture.md` + standalone `diagrams/context.mmd` |
+| `Flow` | `MermaidEndpointFlowchartGenerator` | `endpoints/<tag>.md` per operation |
+
+**ER cardinality mapping:** `Composition` → `||--o{`, `Aggregation` → `}o--o{`,
+`Association` → `}o--||`. Other `RelationshipType` values (e.g. `Inheritance`, `Dependency`) are
+not rendered as ER relationships — the involved entities still appear as standalone blocks.
+
+**Sequence participants:** always `Client` and `API`; `Auth` is added when the operation's
+`SecurityRequirements` is non-empty. The request message includes HTTP method, path, and the
+first request-body media type (preferring named entity references); the response message picks
+the first 2xx response (falling back to the first listed).
+
+**Context diagram:** a Mermaid `flowchart LR` (C4's dedicated primitive is still experimental)
+with `Client`, an API container labelled with the spec title, one node per `ApiServer`, and one
+external-system node per OAuth2 / OpenID-Connect security scheme.
+
+**Endpoint flowchart:** `Request → Validate Params → [Authorize] → Handler → Response`. The
+`Authorize` node is omitted when no security requirements are declared. Non-2xx responses are
+rendered as dashed branches from `Handler`; 2xx responses use solid edges.
+
+### Content depth (Phase 3)
+
+- `--with-examples` activates `ExampleSynthesizer`, which prefers spec-provided
+  `ApiMediaType.Example` payloads (captured by the OpenAPI parser via `OpenApiJsonWriter`) and
+  otherwise synthesises JSON from the schema: enum[0] for constrained strings, ISO-8601
+  placeholders for `date-time`, zero for numerics, single-element arrays, and an ellipsis
+  (`"..."`) to terminate circular entity references.
+- `SecuritySectionBuilder` emits `security.md` whenever the spec declares `securitySchemes` or
+  any operation references a scheme. It produces a scheme-details table, a Mermaid
+  `sequenceDiagram` per OAuth2 flow (authorizationCode, clientCredentials, implicit, password),
+  and a per-operation requirements cross-reference.
+- Endpoint pages link entity mentions to stable anchors inside `domain-model.md` in the form
+  `[\`Pet\`](../domain-model.md#entity-pet)`; the anchors are inlined into the entity table
+  cells with `<a id="entity-<kebab>"></a>` and survive both GitHub-flavoured Markdown and
+  Markdig HTML rendering.
+
+### HTML rendering (Phase 4)
+
+`StaticSiteRenderer` uses `Markdig` with `UseAdvancedExtensions()` so fenced code blocks tagged
+`mermaid` emit as `<div class="mermaid">…</div>` — Mermaid.js picks these up automatically. A
+small compiled regex rewrites intra-bundle `.md` hrefs to `.html` (preserving the `#fragment`
+tail). The sidebar nav is built from the file tree; the current page is tagged `class="active"`
+on its `<a>`. `assets/theme.css` is shipped as an embedded resource of
+`DocFlow.Documentation` (dark/light via `prefers-color-scheme`). Mermaid.js loads from
+`cdn.jsdelivr.net/npm/mermaid@10`; an offline-asset follow-up is tracked in
+`docs/todo.md`.
+
+### Pluggable spec parsing (Phase 5)
+
+`IApiSpecParser` in `DocFlow.Core/Abstractions/` abstracts "parse an API spec stream into a
+`SemanticModel`"; each implementation exposes a `Name`, a `CanParse(path, content)` predicate,
+and a `ParseAsync(Stream, ct)` method that throws `FormatException` on parse failure.
+`SpecParserRegistry` picks the first registered parser whose `CanParse` returns true and throws
+`InvalidOperationException` with a "registered parsers: …" diagnostic otherwise. `OpenApiParser`
+implements the interface via explicit implementation so its legacy `ISchemaParser` entry point
+stays unchanged; the CLI's `integrate docs` and `integrate diff` commands both go through the
+registry rather than hardcoding OpenAPI.
+
+### Watch mode and changelogs (Phase 5)
+
+`integrate docs --watch` runs an initial build, then wires a `FileSystemWatcher` to the spec
+file with a 300 ms debounce (guarded by `SemaphoreSlim` so bursts of `Changed` events collapse
+into a single regeneration). Watch exits cleanly on cancellation.
+
+`integrate diff <old> <new> -o changelog.md` loads both specs via the registry, computes a
+`SpecDiff` with `SpecDiffer`, and renders a Markdown changelog via `ChangelogGenerator`. Diff
+heuristics map each difference to a `ChangeSeverity` (Breaking or NonBreaking) across six
+`ChangeCategory` buckets (Operation, Parameter, RequestBody, Response, Schema, Security):
+
+| Change | Severity |
+|--------|----------|
+| Added operation / added optional parameter / added optional property | Non-breaking |
+| Removed operation / removed parameter / removed property / removed response status | Breaking |
+| Added required parameter or property | Breaking |
+| Tightened required flag (false → true) | Breaking |
+| Relaxed required flag (true → false) | Non-breaking |
+| Changed parameter / field / request-body / response entity type | Breaking |
+| HTTP method or path changed on a kept operationId | Breaking |
+
+The rendered changelog leads with a Breaking / Non-breaking count summary, then groups by
+severity → category.
+
+### Design rules
+
+- **Pure generator**: `IDocumentationGenerator.GenerateAsync` returns an in-memory file list.
+  The CLI layer owns persistence.
+- **Deterministic output**: every iteration is `OrderBy`-preceded; `MarkdownWriter` forces LF
+  line endings and trims trailing whitespace. The domain-model builder clones the input
+  `SemanticModel` with entities re-inserted in alphabetical order so the upstream class diagram
+  generator produces stable text.
+- **Purity check**: `DocFlow.Documentation` depends on Core + Diagrams only. It never references
+  `DocFlow.Integration`; the CLI orchestrates parsing and passes the `SemanticModel` plus the
+  raw source bytes via `DocumentationOptions.SourceSpec`.
+- **Source spec preservation**: the original spec is passed through unmodified as
+  `assets/openapi.<ext>` so readers can verify the docs against the authoritative source
+  without leaving the bundle.
+
+### CLI
+
+```
+docflow integrate docs <spec> \
+    -o <dir> \
+    [--format markdown|html] \
+    [--diagrams class,er,sequence,context,flow] \
+    [--with-examples] \
+    [--group-by tag|path] \
+    [--title "My API"] \
+    [-v]
+```
+
+Exit codes: `0` success, `1` validation error (missing spec, unknown flag value, parser
+failure), `2` I/O error (`IOException`/`UnauthorizedAccessException`/`NotSupportedException`).
+Phase 1 only implements `--format markdown`; `--format html` returns exit 1 with a pointer to
+issue #10.
+
+---
+
 ## Intelligent Mapping Service (IMS)
 
 The IMS (designed, future implementation) learns transformation patterns from examples:
@@ -385,6 +592,9 @@ DocFlow.CLI
 |   +-- DocFlow.Core
 |   +-- DocFlow.IMS
 |   +-- DocFlow.CodeGen
++-- DocFlow.Documentation     # Design-docs bundle generation (Phase 1 complete)
+|   +-- DocFlow.Core
+|   +-- DocFlow.Diagrams
 +-- DocFlow.Documents         # Document pipeline (planned)
 |   +-- DocFlow.Core
 +-- DocFlow.Web               # Web UI (planned)
@@ -440,8 +650,22 @@ All AI-assisted and heuristic-based mappings include confidence scores and reaso
 | Mermaid Generator | `src/DocFlow.Diagrams/Mermaid/MermaidClassDiagramGenerator.cs` |
 | Whiteboard Scanner | `src/DocFlow.Vision/WhiteboardScanner.cs` |
 | Claude Provider | `src/DocFlow.AI/Providers/ClaudeProvider.cs` |
-| OpenAPI Parser | `src/DocFlow.Integration/Schemas/OpenApiParser.cs` |
+| OpenAPI Parser | `src/DocFlow.Integration/Schemas/OpenApi/OpenApiParser.cs` |
 | CDM Mapper | `src/DocFlow.Integration/Mapping/CdmMapper.cs` |
 | SLA Validator | `src/DocFlow.Integration/Validation/SlaValidator.cs` |
 | Code Generator | `src/DocFlow.Integration/CodeGen/IntegrationCodeGenerator.cs` |
+| ApiSurface Records | `src/DocFlow.Core/CanonicalModel/ApiSurface.cs` |
+| Spec Parser Abstraction | `src/DocFlow.Core/Abstractions/IApiSpecParser.cs` |
+| Spec Parser Registry | `src/DocFlow.Core/Abstractions/SpecParserRegistry.cs` |
+| Documentation Generator | `src/DocFlow.Documentation/Markdown/MarkdownDocumentationGenerator.cs` |
+| Documentation Section Builders | `src/DocFlow.Documentation/Markdown/Sections/` |
+| Example Synthesizer | `src/DocFlow.Documentation/Examples/ExampleSynthesizer.cs` |
+| Spec Differ | `src/DocFlow.Documentation/Diff/SpecDiffer.cs` |
+| Changelog Generator | `src/DocFlow.Documentation/Diff/ChangelogGenerator.cs` |
+| Static HTML Renderer | `src/DocFlow.Documentation/Html/StaticSiteRenderer.cs` |
+| HTML Theme (embedded) | `src/DocFlow.Documentation/Html/Assets/theme.css` |
+| ER Diagram Generator | `src/DocFlow.Diagrams/Mermaid/MermaidErDiagramGenerator.cs` |
+| Sequence Diagram Generator | `src/DocFlow.Diagrams/Mermaid/MermaidSequenceDiagramGenerator.cs` |
+| C4 Context Generator | `src/DocFlow.Diagrams/Mermaid/MermaidC4ContextGenerator.cs` |
+| Endpoint Flowchart Generator | `src/DocFlow.Diagrams/Mermaid/MermaidEndpointFlowchartGenerator.cs` |
 | CLI Entry Point | `src/DocFlow.CLI/Program.cs` |

@@ -35,7 +35,11 @@
       "Bash(/root/.dotnet/dotnet sln:*)",
       "Bash(./docflow-dev.sh:*)",
       "Bash(rm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(mkdir -p /tmp/diff-demo)",
+      "Bash(cp samples/integration-demos/petstore.json /tmp/diff-demo/old.json)",
+      "Bash(cp samples/integration-demos/petstore.json /tmp/diff-demo/new.json)",
+      "Bash(sed -i 's/\"placeOrder\"/\"placeOrderV2\"/' /tmp/diff-demo/new.json)"
     ]
   }
 }

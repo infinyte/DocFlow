@@ -16,6 +16,7 @@
   "paths": {
     "/pets": {
       "get": {
+        "tags": ["pet"],
         "summary": "List all pets",
         "operationId": "listPets",
         "responses": {
@@ -35,6 +36,7 @@
         }
       },
       "post": {
+        "tags": ["pet"],
         "summary": "Create a pet",
         "operationId": "createPet",
         "requestBody": {
@@ -62,6 +64,7 @@
     },
     "/pets/{petId}": {
       "get": {
+        "tags": ["pet"],
         "summary": "Get a pet by ID",
         "operationId": "getPetById",
         "parameters": [
@@ -94,6 +97,7 @@
     },
     "/orders": {
       "post": {
+        "tags": ["store"],
         "summary": "Place an order",
         "operationId": "placeOrder",
         "requestBody": {

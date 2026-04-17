@@ -17,7 +17,7 @@ Transform whiteboard sketches into working code. Generate diagrams from source f
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![Tests](https://img.shields.io/badge/tests-72%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-152%20passing-brightgreen)]()
 
 ---
 
@@ -117,7 +117,42 @@ docflow integrate sla https://api.example.com/data --expected 30s --samples 10
 
 # Generate integration code (DTOs, AutoMapper, HTTP client, validators)
 docflow integrate generate petstore.json --cdm Models/ -o Generated/ -n MyApp.Integration
+
+# Generate a navigable design-docs bundle (Markdown + Mermaid + HTML)
+docflow integrate docs petstore.json -o docs/api -v
+
+# Watch the spec and regenerate on change (debounced)
+docflow integrate docs petstore.json -o docs/api --watch
+
+# Emit a breaking / non-breaking Markdown changelog between two specs
+docflow integrate diff old.json new.json -o CHANGELOG.md
 ```
+
+#### Docs Bundle Contents
+
+Running `docflow integrate docs` produces:
+
+```
+docs/api/
+├── index.md                  # TOC
+├── overview.md               # API title, servers, auth summary
+├── architecture.md           # C4-style system-context diagram + deployments table
+├── domain-model.md           # Mermaid class + ER diagrams + entity table (with anchors)
+├── security.md               # Scheme table, OAuth2 flow diagrams, per-operation requirements
+├── endpoints/<tag>.md        # One page per tag (or path segment); sequence + flowchart embedded
+├── sequences/<opId>.md       # Standalone per-operation sequence diagrams
+├── diagrams/context.mmd      # Standalone Mermaid context diagram
+└── assets/openapi.json       # Verbatim copy of the source spec
+```
+
+The default `--diagrams` set is `all` (class, ER, sequence, context, flow). Entity references on
+endpoint pages link into `domain-model.md` via stable `#entity-<kebab>` anchors. Passing
+`--with-examples` adds synthesized JSON request/response examples (spec-provided examples take
+precedence when present).
+
+Passing `--format html` converts the bundle into a self-contained static site: one `.html` per
+`.md`, an embedded dark/light CSS theme (`assets/theme.css`), a sidebar nav, and Mermaid.js via
+CDN. See [Documentation module design](docs/design/documentation-module.md).
 
 #### Generate Options
 

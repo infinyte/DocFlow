@@ -52,6 +52,12 @@ public sealed class SemanticModel
     /// Information about how this model was created
     /// </summary>
     public ModelProvenance? Provenance { get; set; }
+
+    /// <summary>
+    /// API-level surface (operations, parameters, responses, servers, security) layered on top
+    /// of the entity model. Null when the source format does not describe an API (e.g. pure C# parse).
+    /// </summary>
+    public ApiSurface? Api { get; set; }
     
     /// <summary>
     /// Validation issues found in this model
